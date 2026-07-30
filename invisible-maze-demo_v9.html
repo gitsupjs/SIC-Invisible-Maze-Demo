@@ -1,0 +1,1866 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>隱形迷宮 — Dream Gym 3</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&family=Outfit:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg-top: #eaf3fb;
+      --bg-bottom: #f8fbff;
+      --surface: #ffffff;
+      --ink: #16324f;
+      --muted: #5a7190;
+      --line: #d7e3ef;
+      --cell: #d8e2ec;
+      --cell-hover: #c5d4e3;
+      --success: #22c55e;
+      --success-glow: rgba(34, 197, 94, 0.35);
+      --fail: #ef4444;
+      --path-hint: #fde68a;
+      --path-outline: #f59e0b;
+      --brand-blue: #1a3d6d;
+      --brand-orange: #f15a24;
+      --accent: #1a3d6d;
+      --accent-dark: #122c4f;
+      --shadow: 0 18px 50px rgba(22, 50, 79, 0.12);
+      --radius: 16px;
+      --cols: 5;
+      --rows: 7;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      font-family: "Noto Sans TC", "Outfit", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(ellipse 70% 45% at 50% -8%, #c5dff3 0%, transparent 55%),
+        linear-gradient(180deg, var(--bg-top), var(--bg-bottom));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.25rem 1.25rem 1.75rem;
+    }
+
+    .app {
+      width: min(860px, 100%);
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+    }
+
+    /* ---------- Header ---------- */
+    .header {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 0.5rem 0.75rem;
+      align-items: center;
+      background: var(--surface);
+      border-radius: calc(var(--radius) + 4px);
+      padding: 0.5rem 0.75rem;
+      box-shadow: var(--shadow);
+    }
+
+    .logo {
+      width: clamp(108px, 18vw, 148px);
+      height: auto;
+      display: block;
+      border-radius: 8px;
+    }
+
+    .header-copy {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 0.15rem;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      color: var(--brand-orange);
+      margin-bottom: 0;
+    }
+
+    .eyebrow::before {
+      content: "";
+      width: 14px;
+      height: 2px;
+      border-radius: 999px;
+      background: var(--brand-orange);
+    }
+
+    h1 {
+      font-size: clamp(1.3rem, 2.6vw, 1.65rem);
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      color: var(--brand-blue);
+      line-height: 1.1;
+      margin-bottom: 0;
+    }
+
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.15rem 1rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    .meta strong {
+      color: var(--ink);
+      font-weight: 600;
+    }
+
+    .meta-item {
+      display: flex;
+      gap: 0.3rem;
+      flex-wrap: wrap;
+      line-height: 1.35;
+    }
+
+    .meta-label {
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    /* ---------- Compact top queue ---------- */
+    .queue-bar {
+      background: var(--surface);
+      border-radius: calc(var(--radius) + 2px);
+      padding: 0.55rem 0.85rem;
+      box-shadow: var(--shadow);
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      flex-wrap: wrap;
+    }
+
+    .queue-bar-head {
+      display: flex;
+      align-items: baseline;
+      gap: 0.45rem;
+      flex-shrink: 0;
+    }
+
+    .queue-title {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      color: var(--brand-blue);
+      white-space: nowrap;
+    }
+
+    .queue-now {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .queue-now strong {
+      color: var(--brand-orange);
+      font-size: 0.9rem;
+    }
+
+    .queue {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+      flex: 1;
+      justify-content: flex-end;
+    }
+
+    .member {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.2rem 0.45rem 0.2rem 0.3rem;
+      border-radius: 999px;
+      background: #f3f7fb;
+      border: 1.5px solid transparent;
+      transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .member.active {
+      background: #fff4ee;
+      border-color: var(--brand-orange);
+      box-shadow: 0 3px 10px rgba(241, 90, 36, 0.16);
+    }
+
+    .person {
+      width: 22px;
+      height: 22px;
+      display: block;
+      flex-shrink: 0;
+    }
+
+    .member-id {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--ink);
+      line-height: 1;
+    }
+
+    .member.active .member-id {
+      color: var(--brand-blue);
+    }
+
+    .member-tag {
+      display: none;
+      font-size: 0.62rem;
+      font-weight: 600;
+      color: var(--brand-orange);
+      margin-left: 0.1rem;
+    }
+
+    .member.active .member-tag {
+      display: inline;
+    }
+
+    /* ---------- Board ---------- */
+    .board-wrap {
+      background: var(--surface);
+      border-radius: calc(var(--radius) + 4px);
+      padding: 1.1rem;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .status {
+      min-height: 1.4rem;
+      font-size: 0.98rem;
+      font-weight: 600;
+      color: var(--muted);
+      text-align: center;
+      transition: color 0.2s ease;
+    }
+
+    .status.success { color: #15803d; }
+    .status.fail { color: #b91c1c; }
+
+    .board-grid-area {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      grid-template-rows: auto 1fr;
+      gap: 0.35rem 0.45rem;
+      width: 100%;
+      max-width: 460px;
+      margin: 0 auto;
+    }
+
+    .grid-corner {
+      width: 1.4rem;
+    }
+
+    .col-labels {
+      display: grid;
+      grid-template-columns: repeat(var(--cols), 1fr);
+      gap: 10px;
+      grid-column: 2;
+    }
+
+    .col-labels span,
+    .row-labels span {
+      font-size: 0.72rem;
+      font-weight: 800;
+      color: var(--brand-blue);
+      text-align: center;
+      line-height: 1;
+    }
+
+    .grid-with-rows {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 0.45rem;
+      grid-column: 1 / -1;
+    }
+
+    .row-labels {
+      display: grid;
+      grid-template-rows: repeat(var(--rows), 1fr);
+      gap: 10px;
+      align-items: center;
+      width: 1.4rem;
+    }
+
+    .row-labels span {
+      text-align: center;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(var(--cols), 1fr);
+      grid-template-rows: repeat(var(--rows), 1fr);
+      gap: 10px;
+      aspect-ratio: 5 / 7;
+      width: 100%;
+    }
+
+    .cell {
+      position: relative;
+      border: none;
+      border-radius: 12px;
+      background: var(--cell);
+      cursor: pointer;
+      touch-action: manipulation;
+      transition:
+        background-color 0.2s ease,
+        box-shadow 0.2s ease,
+        transform 0.12s ease;
+      font-size: clamp(1.3rem, 3.5vw, 1.85rem);
+      font-weight: 700;
+      color: transparent;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      display: grid;
+      place-items: center;
+      line-height: 1;
+    }
+
+    .cell:hover:not(:disabled) {
+      background: var(--cell-hover);
+      transform: scale(1.03);
+    }
+
+    .cell:disabled { cursor: default; }
+
+    .cell:focus-visible {
+      outline: 3px solid var(--brand-orange);
+      outline-offset: 2px;
+    }
+
+    .cell.correct {
+      background: var(--success);
+      box-shadow: 0 0 0 3px var(--success-glow);
+      color: #fff;
+    }
+
+    .cell.correct:hover {
+      background: var(--success);
+      transform: none;
+    }
+
+    .cell.path-hint:not(.correct):not(.fail) {
+      background: var(--path-hint);
+      box-shadow: inset 0 0 0 3px var(--path-outline);
+    }
+
+    .cell.fail {
+      background: var(--fail);
+      color: #fff;
+      animation: shake 0.35s ease;
+    }
+
+    .cell-mark {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      gap: 1px;
+    }
+
+    .cell-mark .person-on-grid {
+      width: clamp(26px, 52%, 40px);
+      height: clamp(26px, 52%, 40px);
+      display: block;
+      flex-shrink: 0;
+    }
+
+    .cell-mark .cell-icon {
+      font-size: clamp(1.1rem, 3vw, 1.5rem);
+      font-weight: 700;
+      color: #fff;
+      line-height: 1;
+    }
+
+    .cell-mark .cell-letter {
+      font-size: clamp(0.62rem, 1.8vw, 0.78rem);
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: 0.02em;
+    }
+
+    .cell.correct .cell-letter {
+      color: #fff;
+    }
+
+    .cell.fail .cell-letter {
+      color: #fff;
+    }
+
+    .cell.has-player .cell-letter {
+      color: var(--ink);
+    }
+
+    .cell.correct.has-player .cell-letter {
+      color: #fff;
+    }
+
+    .cell.correct:not(.has-player) .cell-mark {
+      gap: 2px;
+    }
+
+    .cell.correct:not(.has-player) .cell-letter {
+      font-size: clamp(0.58rem, 1.6vw, 0.72rem);
+      opacity: 0.95;
+    }
+
+    .cell.fail .person-on-grid {
+      width: clamp(22px, 44%, 34px);
+      height: clamp(22px, 44%, 34px);
+      opacity: 0.9;
+    }
+
+    .cell.correct.has-player {
+      color: transparent;
+    }
+
+    .btn-primary.admin-hidden {
+      display: none;
+    }
+
+    .btn-primary.admin-visible {
+      display: inline-block;
+    }
+
+    /* Invisible admin unlock zone — bottom-right corner */
+    .admin-unlock-zone {
+      position: fixed;
+      right: 0;
+      bottom: 0;
+      width: 72px;
+      height: 72px;
+      cursor: default;
+      z-index: 100;
+      /* fully invisible to participants */
+      background: transparent;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-4px); }
+      75% { transform: translateX(4px); }
+    }
+
+    /* ---------- Controls ---------- */
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.65rem;
+      justify-content: center;
+    }
+
+    .btn {
+      appearance: none;
+      border: none;
+      border-radius: 999px;
+      padding: 0.8rem 1.25rem;
+      font-family: inherit;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.15s ease, transform 0.12s ease, box-shadow 0.15s ease;
+    }
+
+    .btn:active { transform: translateY(1px); }
+
+    .btn-primary {
+      background: var(--brand-blue);
+      color: #fff;
+      box-shadow: 0 8px 20px rgba(26, 61, 109, 0.28);
+    }
+
+    .btn-primary:hover { background: var(--accent-dark); }
+    .btn-primary.active { background: #0f2748; }
+
+    .btn-secondary {
+      background: #e2eaf2;
+      color: var(--ink);
+    }
+
+    .btn-secondary:hover { background: #d0dbe6; }
+
+    .btn-accent {
+      background: var(--brand-orange);
+      color: #fff;
+      box-shadow: 0 8px 20px rgba(241, 90, 36, 0.28);
+    }
+
+    .btn-accent:hover { background: #d94e1a; }
+    .btn-accent:disabled {
+      opacity: 0.65;
+      cursor: default;
+      transform: none;
+    }
+
+    /* ---------- Public ballot ---------- */
+    .ballot-panel {
+      background: var(--surface);
+      border-radius: calc(var(--radius) + 2px);
+      padding: 0.75rem 0.9rem;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.65rem;
+    }
+
+    .ballot-copy {
+      flex: 1;
+      min-width: 10rem;
+    }
+
+    .ballot-title {
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      color: var(--brand-blue);
+      margin-bottom: 0.15rem;
+    }
+
+    .ballot-hint {
+      font-size: 0.72rem;
+      color: var(--muted);
+      line-height: 1.35;
+    }
+
+    .ballot-result-wrap {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      flex-shrink: 0;
+    }
+
+    .ballot-display {
+      min-width: 5.5rem;
+      text-align: center;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--muted);
+      padding: 0.45rem 0.65rem;
+      border-radius: 12px;
+      background: #f3f7fb;
+      border: 2px dashed #c5d4e3;
+      line-height: 1.2;
+    }
+
+    .ballot-display .ballot-num {
+      display: block;
+      font-size: 1.85rem;
+      font-weight: 800;
+      color: var(--brand-orange);
+      line-height: 1.05;
+      margin-top: 0.1rem;
+    }
+
+    .ballot-display.drawing .ballot-num {
+      animation: ballot-pulse 0.12s ease-in-out infinite alternate;
+    }
+
+    .ballot-display.drawn {
+      border-style: solid;
+      border-color: var(--brand-orange);
+      background: #fff4ee;
+      color: var(--brand-blue);
+    }
+
+    @keyframes ballot-pulse {
+      from { transform: scale(0.95); opacity: 0.7; }
+      to { transform: scale(1.05); opacity: 1; }
+    }
+
+    .route-picker {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: var(--surface);
+      border-radius: 999px;
+      padding: 0.4rem 0.8rem 0.4rem 0.95rem;
+      box-shadow: var(--shadow);
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--muted);
+    }
+
+    .route-picker label { white-space: nowrap; }
+
+    .route-picker select {
+      appearance: none;
+      border: 2px solid var(--line);
+      border-radius: 999px;
+      background: #f3f7fb url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23163a4f' d='M1 1l5 5 5-5'/%3E%3C/svg%3E") no-repeat right 0.7rem center;
+      padding: 0.4rem 1.85rem 0.4rem 0.75rem;
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--ink);
+      cursor: pointer;
+    }
+
+    .route-picker select:focus-visible {
+      outline: 3px solid var(--brand-orange);
+      outline-offset: 2px;
+    }
+
+    /* ---------- Rules ---------- */
+    .rules {
+      background: var(--surface);
+      border-radius: calc(var(--radius) + 2px);
+      padding: 0.85rem 1.1rem;
+      box-shadow: var(--shadow);
+    }
+
+    .rules-title {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--brand-blue);
+      letter-spacing: 0.04em;
+      margin-bottom: 0.55rem;
+    }
+
+    .rules-list {
+      list-style: none;
+      display: grid;
+      gap: 0.4rem;
+    }
+
+    .rules-list li {
+      position: relative;
+      padding-left: 1.1rem;
+      font-size: 0.9rem;
+      line-height: 1.45;
+      color: var(--ink);
+    }
+
+    .rules-list li::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0.55em;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--brand-orange);
+    }
+
+    .rules-list strong {
+      color: var(--brand-blue);
+      font-weight: 700;
+    }
+
+    /* ---------- Facilitator guide ---------- */
+    .facilitator-guide {
+      background: var(--surface);
+      border-radius: calc(var(--radius) + 2px);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .facilitator-guide summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 0.75rem 1rem;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--brand-blue);
+      letter-spacing: 0.04em;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+
+    .facilitator-guide summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .facilitator-guide summary::after {
+      content: "＋";
+      font-size: 1rem;
+      color: var(--brand-orange);
+      font-weight: 800;
+    }
+
+    .facilitator-guide[open] summary::after {
+      content: "－";
+    }
+
+    .guide-body {
+      padding: 0 1rem 0.9rem;
+      font-size: 0.84rem;
+      line-height: 1.5;
+      color: var(--ink);
+    }
+
+    .guide-body h3 {
+      font-size: 0.8rem;
+      font-weight: 800;
+      color: var(--brand-blue);
+      margin: 0.65rem 0 0.35rem;
+    }
+
+    .guide-body h3:first-child {
+      margin-top: 0;
+    }
+
+    .guide-body ol,
+    .guide-body ul {
+      margin: 0 0 0.5rem 1.1rem;
+    }
+
+    .guide-body li {
+      margin-bottom: 0.28rem;
+    }
+
+    .guide-body .guide-note {
+      margin-top: 0.55rem;
+      padding: 0.55rem 0.7rem;
+      border-radius: 10px;
+      background: #f3f7fb;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+
+    /* ---------- Scoreboard ---------- */
+    .scoreboard {
+      background: var(--surface);
+      border-radius: calc(var(--radius) + 2px);
+      padding: 0.75rem 0.9rem;
+      box-shadow: var(--shadow);
+    }
+
+    .scoreboard-title {
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      color: var(--brand-blue);
+      margin-bottom: 0.2rem;
+    }
+
+    .scoreboard-hint {
+      font-size: 0.68rem;
+      color: var(--muted);
+      margin-bottom: 0.5rem;
+      line-height: 1.35;
+    }
+
+    .scoreboard-grid {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 0.45rem;
+    }
+
+    .score-card {
+      background: #f3f7fb;
+      border-radius: 10px;
+      padding: 0.45rem 0.35rem;
+      border: 1.5px solid transparent;
+      min-height: 4.5rem;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .score-card.active {
+      background: #fff4ee;
+      border-color: var(--brand-orange);
+    }
+
+    .score-card-head {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.2rem;
+      margin-bottom: 0.3rem;
+      flex-shrink: 0;
+    }
+
+    .score-card-head .person {
+      width: 16px;
+      height: 16px;
+    }
+
+    .score-card-id {
+      font-size: 0.82rem;
+      font-weight: 800;
+      color: var(--brand-blue);
+      line-height: 1;
+    }
+
+    .score-card-count {
+      text-align: center;
+      font-size: 0.62rem;
+      font-weight: 600;
+      color: var(--muted);
+      margin-bottom: 0.25rem;
+      flex-shrink: 0;
+    }
+
+    .score-log-scroll {
+      flex: 1;
+      min-height: 0;
+      max-height: 8.5rem;
+      overflow-y: auto;
+      overflow-x: hidden;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+      padding-right: 0.1rem;
+      scrollbar-width: thin;
+      scrollbar-color: #c5d4e3 transparent;
+    }
+
+    .score-log-scroll::-webkit-scrollbar {
+      width: 5px;
+    }
+
+    .score-log-scroll::-webkit-scrollbar-thumb {
+      background: #c5d4e3;
+      border-radius: 999px;
+    }
+
+    .score-attempts {
+      display: flex;
+      flex-direction: column;
+      gap: 0.45rem;
+    }
+
+    .score-attempt {
+      display: flex;
+      flex-direction: column;
+      gap: 0.18rem;
+    }
+
+    .attempt-head {
+      font-size: 0.64rem;
+      font-weight: 800;
+      color: var(--brand-blue);
+      letter-spacing: 0.02em;
+      padding: 0.12rem 0.28rem;
+      border-radius: 6px;
+      background: rgba(26, 61, 109, 0.08);
+      text-align: center;
+    }
+
+    .score-card.active .attempt-head {
+      background: rgba(241, 90, 36, 0.12);
+      color: var(--brand-orange);
+    }
+
+    .score-hits {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.18rem;
+    }
+
+    .score-hits li {
+      display: grid;
+      grid-template-columns: auto auto 1fr;
+      align-items: center;
+      gap: 0.2rem;
+      font-size: 0.62rem;
+      line-height: 1.2;
+      color: var(--ink);
+      font-weight: 600;
+      padding: 0.18rem 0.28rem;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.82);
+    }
+
+    .score-hits .guess-num {
+      color: var(--muted);
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .score-hits .guess-mark {
+      font-size: 0.72rem;
+      font-weight: 800;
+      width: 0.85rem;
+      text-align: center;
+    }
+
+    .score-hits .guess.correct .guess-mark {
+      color: #15803d;
+    }
+
+    .score-hits .guess.wrong .guess-mark {
+      color: #b91c1c;
+    }
+
+    .score-hits .guess-cell {
+      text-align: right;
+      font-weight: 800;
+      color: var(--brand-blue);
+    }
+
+    .score-hits .empty {
+      display: block;
+      color: var(--muted);
+      font-weight: 500;
+      background: transparent;
+      text-align: center;
+      padding: 0.2rem 0;
+    }
+
+    @media (max-width: 640px) {
+      .header {
+        grid-template-columns: 1fr;
+        justify-items: center;
+        text-align: center;
+      }
+
+      .eyebrow { justify-content: center; }
+
+      .meta {
+        justify-content: center;
+      }
+
+      .queue-bar {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .queue {
+        justify-content: center;
+      }
+
+      .scoreboard-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <img
+        class="logo"
+        src="dream-gym-3-logo.jpeg"
+        alt="Dream Gym 3 標誌"
+        width="148"
+        height="154"
+      />
+      <div class="header-copy">
+        <div class="eyebrow">Dream Gym 3</div>
+        <h1>隱形迷宮</h1>
+        <div class="meta">
+          <div class="meta-item">
+            <span class="meta-label">課程：</span>
+            <strong>SIC 2/2026</strong>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">環節：</span>
+            <strong>活動式領導訓練</strong>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div class="queue-bar" aria-label="隊伍輪候">
+      <div class="queue-bar-head">
+        <span class="queue-title">隊伍輪候</span>
+        <span id="queueNow" class="queue-now">現正猜測：<strong>A</strong></span>
+      </div>
+      <div id="queue" class="queue" role="list"></div>
+    </div>
+
+    <section class="ballot-panel" aria-label="公開抽籤選路線">
+      <div class="ballot-copy">
+        <div class="ballot-title">公開抽籤</div>
+        <p class="ballot-hint">每隊開始前，當眾抽出 1–10 號路線（各路線難度相同）</p>
+      </div>
+      <div class="ballot-result-wrap">
+        <div id="ballotDisplay" class="ballot-display" aria-live="polite">
+          尚未抽籤
+        </div>
+        <button type="button" id="drawRouteBtn" class="btn btn-accent">抽籤</button>
+      </div>
+    </section>
+
+    <div class="board-wrap">
+      <p id="status" class="status" aria-live="polite">隊員 A 輪到 — 請選底行任意一格。</p>
+      <div class="board-grid-area">
+        <div class="grid-corner" aria-hidden="true"></div>
+        <div id="colLabels" class="col-labels" aria-hidden="true"></div>
+        <div class="grid-with-rows">
+          <div id="rowLabels" class="row-labels" aria-hidden="true"></div>
+          <div id="grid" class="grid" role="grid" aria-label="隱形迷宮，欄 A–E，行 1–7（行 1 為底行）"></div>
+        </div>
+      </div>
+    </div>
+
+    <section class="scoreboard" aria-label="成績紀錄">
+      <div class="scoreboard-title">成績紀錄</div>
+      <p class="scoreboard-hint">參與 = 每次輪到你上場；猜測 = 該次參與內的每次選格</p>
+      <div id="scoreboard" class="scoreboard-grid"></div>
+    </section>
+
+    <div class="controls">
+      <div class="route-picker">
+        <label for="routeSelect">路線</label>
+        <select id="routeSelect" aria-label="目前路線（抽籤後自動設定）" disabled></select>
+      </div>
+      <button type="button" id="togglePathBtn" class="btn btn-primary admin-hidden" hidden>顯示／隱藏路線</button>
+      <button type="button" id="resetBtn" class="btn btn-secondary">重新開始</button>
+    </div>
+
+    <!-- 管理員專用：連續點擊右下角 5 次以顯示「顯示／隱藏路線」按鈕 -->
+    <div id="adminUnlockZone" class="admin-unlock-zone" aria-hidden="true" title=""></div>
+
+    <section class="rules" aria-label="遊戲規則">
+      <div class="rules-title">遊戲規則</div>
+      <ul class="rules-list">
+        <li>格子以<strong>欄 A–E</strong>（左至右）、<strong>行 1–7</strong>（底至頂）標示。</li>
+        <li>7 位隊員（<strong>A–G</strong>）按順序輪流猜測。</li>
+        <li>第一步：可選<strong>底行任意一格</strong>（選錯入口也算失敗）。</li>
+        <li>之後：只能選與現位置<strong>上下左右相鄰</strong>的格子。</li>
+        <li>猜對 <strong>✓</strong>：該隊員繼續猜，進度保留。</li>
+        <li>猜錯 <strong>✕</strong>：顯示 3 秒，進度清零，該隊員排到<strong>隊尾</strong>。</li>
+        <li>目標：由底行至頂行，走完整條隱藏路線即勝。</li>
+      </ul>
+    </section>
+
+    <details class="facilitator-guide">
+      <summary>導師操作指引（點擊展開）</summary>
+      <div class="guide-body">
+        <h3>一、使用前準備</h3>
+        <ol>
+          <li>以<strong>單一投影／大螢幕</strong>開啟本頁，由導師操作；活動期間<strong>不宜</strong>讓每位隊員各自用手機玩此頁面。</li>
+          <li>可先將連結發給隊員作<strong>賽前預習</strong>，但現場以投影示範為準。</li>
+          <li>確認實體地格與螢幕一致：欄 <strong>A–E</strong>（左至右）、行 <strong>1–7</strong>（底至頂）。</li>
+        </ol>
+
+        <h3>二、每隊開始流程（含公開抽籤）</h3>
+        <ol>
+          <li>按<strong>重新開始</strong>，清空隊伍輪候與成績紀錄。</li>
+          <li>邀請一位隊員或全隊見證，按<strong>抽籤</strong>，當眾抽出 1–10 號路線。</li>
+          <li>宣讀抽籤結果（例如：「本隊為路線 7」），再開始實體遊戲。</li>
+          <li>隊員在實體地格上站位；導師在螢幕上<strong>同步點選</strong>相同格子。</li>
+        </ol>
+
+        <h3>三、進行中操作</h3>
+        <ul>
+          <li><strong>隊伍輪候</strong>：只有最前方隊員（A–G）負責猜測；猜對可繼續，猜錯則排到隊尾。</li>
+          <li><strong>格子標記</strong>：點選後顯示該隊員顏色小人及代號；正確為綠格，錯誤顯示 ✕ 3 秒後全隊回到起點。</li>
+          <li><strong>成績紀錄</strong>：自動記錄每次<strong>參與</strong>及當中的每次<strong>猜測</strong>（✓／✕ 及格子編號）。</li>
+          <li>導師專用：連續點擊頁面<strong>右下角 5 次</strong>，可顯示「顯示／隱藏路線」（建議留待檢討或示範後使用）。</li>
+        </ul>
+
+        <h3>四、賽後檢討（善用成績紀錄）</h3>
+        <ol>
+          <li>投影<strong>成績紀錄</strong>，逐隊員檢視「第 N 次參與」內的每次猜測。</li>
+          <li>引導討論：誰較多參與？錯誤是否重複？團隊如何傳遞已試路徑的資訊？</li>
+          <li>可選擇揭示隱藏路線，對照實際正確路徑。</li>
+          <li>總結學習：溝通、領導輪替、從失敗中學習、共同記憶。</li>
+        </ol>
+
+        <p class="guide-note">
+          提示：10 條路線長度與難度相同，抽籤旨在讓各隊體驗不同路徑，並確保過程公開公平。
+          下一隊開始前，請先按「重新開始」，再進行新一輪抽籤。
+        </p>
+      </div>
+    </details>
+  </div>
+
+  <script>
+    // =============================================================================
+    // MAZE CONFIGURATION — edit ROUTES below to create / tweak maze variations
+    // =============================================================================
+
+    const COLS = 5;
+    const ROWS = 7;
+    const PATH_LENGTH = 12;
+    const FAIL_DISPLAY_MS = 3000;
+
+    const ROUTES = [
+      [
+        { col: 1, row: 6 }, { col: 1, row: 5 }, { col: 0, row: 5 }, { col: 0, row: 4 },
+        { col: 0, row: 3 }, { col: 1, row: 3 }, { col: 2, row: 3 }, { col: 3, row: 3 },
+        { col: 3, row: 2 }, { col: 3, row: 1 }, { col: 4, row: 1 }, { col: 4, row: 0 },
+      ],
+      [
+        { col: 3, row: 6 }, { col: 3, row: 5 }, { col: 4, row: 5 }, { col: 4, row: 4 },
+        { col: 4, row: 3 }, { col: 3, row: 3 }, { col: 2, row: 3 }, { col: 1, row: 3 },
+        { col: 1, row: 2 }, { col: 1, row: 1 }, { col: 0, row: 1 }, { col: 0, row: 0 },
+      ],
+      [
+        { col: 2, row: 6 }, { col: 2, row: 5 }, { col: 2, row: 4 }, { col: 1, row: 4 },
+        { col: 0, row: 4 }, { col: 0, row: 3 }, { col: 0, row: 2 }, { col: 1, row: 2 },
+        { col: 2, row: 2 }, { col: 3, row: 2 }, { col: 3, row: 1 }, { col: 3, row: 0 },
+      ],
+      [
+        { col: 0, row: 6 }, { col: 0, row: 5 }, { col: 1, row: 5 }, { col: 2, row: 5 },
+        { col: 2, row: 4 }, { col: 2, row: 3 }, { col: 2, row: 2 }, { col: 1, row: 2 },
+        { col: 1, row: 1 }, { col: 1, row: 0 }, { col: 2, row: 0 }, { col: 3, row: 0 },
+      ],
+      [
+        { col: 4, row: 6 }, { col: 4, row: 5 }, { col: 3, row: 5 }, { col: 2, row: 5 },
+        { col: 2, row: 4 }, { col: 2, row: 3 }, { col: 2, row: 2 }, { col: 3, row: 2 },
+        { col: 3, row: 1 }, { col: 3, row: 0 }, { col: 2, row: 0 }, { col: 1, row: 0 },
+      ],
+      [
+        { col: 1, row: 6 }, { col: 0, row: 6 }, { col: 0, row: 5 }, { col: 0, row: 4 },
+        { col: 1, row: 4 }, { col: 2, row: 4 }, { col: 3, row: 4 }, { col: 3, row: 3 },
+        { col: 3, row: 2 }, { col: 4, row: 2 }, { col: 4, row: 1 }, { col: 4, row: 0 },
+      ],
+      [
+        { col: 3, row: 6 }, { col: 4, row: 6 }, { col: 4, row: 5 }, { col: 4, row: 4 },
+        { col: 3, row: 4 }, { col: 2, row: 4 }, { col: 1, row: 4 }, { col: 1, row: 3 },
+        { col: 1, row: 2 }, { col: 0, row: 2 }, { col: 0, row: 1 }, { col: 0, row: 0 },
+      ],
+      [
+        { col: 2, row: 6 }, { col: 1, row: 6 }, { col: 1, row: 5 }, { col: 1, row: 4 },
+        { col: 1, row: 3 }, { col: 0, row: 3 }, { col: 0, row: 2 }, { col: 0, row: 1 },
+        { col: 1, row: 1 }, { col: 2, row: 1 }, { col: 3, row: 1 }, { col: 3, row: 0 },
+      ],
+      [
+        { col: 0, row: 6 }, { col: 1, row: 6 }, { col: 1, row: 5 }, { col: 2, row: 5 },
+        { col: 3, row: 5 }, { col: 3, row: 4 }, { col: 3, row: 3 }, { col: 4, row: 3 },
+        { col: 4, row: 2 }, { col: 4, row: 1 }, { col: 3, row: 1 }, { col: 3, row: 0 },
+      ],
+      [
+        { col: 4, row: 6 }, { col: 3, row: 6 }, { col: 3, row: 5 }, { col: 2, row: 5 },
+        { col: 1, row: 5 }, { col: 1, row: 4 }, { col: 1, row: 3 }, { col: 1, row: 2 },
+        { col: 2, row: 2 }, { col: 2, row: 1 }, { col: 2, row: 0 }, { col: 1, row: 0 },
+      ],
+    ];
+
+    const MEMBER_COLORS = [
+      "#1a3d6d", "#f15a24", "#0f766e", "#7c3aed",
+      "#0369a1", "#b45309", "#be123c",
+    ];
+
+    const ALL_MEMBERS = ["A", "B", "C", "D", "E", "F", "G"];
+
+    /** Grid column letters (A = left) */
+    const COL_LABELS = ["A", "B", "C", "D", "E"];
+
+    let routeIndex = 0;
+    let pathIndex = -1;
+    let pathVisible = false;
+    let inputLocked = false;
+    let completed = false;
+    let queue = ["A", "B", "C", "D", "E", "F", "G"];
+    let failTimerId = null;
+
+    /** Current player standing position on the grid; null = off the board */
+    let playerPosition = null;
+
+    /** Fail cell shown during the 3-second penalty */
+    let failPosition = null;
+
+    /** Member who made the wrong click (shown during fail animation) */
+    let failMember = null;
+
+    /** Successful steps in the current run (cleared on fail) */
+    let currentRunSteps = [];
+
+    /** Full log per member: attempts → guesses */
+    let memberLogs = createEmptyMemberLogs();
+
+    /** Tracks whether each member has an open attempt in progress */
+    let memberAttemptState = createEmptyAttemptState();
+
+    /** Admin unlock: clicks on bottom-right corner */
+    let adminUnlockClicks = 0;
+    let adminUnlockTimerId = null;
+    const ADMIN_UNLOCK_CLICKS = 5;
+    const ADMIN_UNLOCK_RESET_MS = 4000;
+    const DRAW_ANIMATION_MS = 1800;
+    const DRAW_TICK_MS = 80;
+
+    /** True after a public ballot has assigned the route for this round */
+    let routeDrawn = false;
+    let isDrawing = false;
+    let drawTimerId = null;
+
+    const gridEl = document.getElementById("grid");
+    const colLabelsEl = document.getElementById("colLabels");
+    const rowLabelsEl = document.getElementById("rowLabels");
+    const statusEl = document.getElementById("status");
+    const queueEl = document.getElementById("queue");
+    const queueNowEl = document.getElementById("queueNow");
+    const scoreboardEl = document.getElementById("scoreboard");
+    const routeSelect = document.getElementById("routeSelect");
+    const togglePathBtn = document.getElementById("togglePathBtn");
+    const resetBtn = document.getElementById("resetBtn");
+    const ballotDisplayEl = document.getElementById("ballotDisplay");
+    const drawRouteBtn = document.getElementById("drawRouteBtn");
+    const adminUnlockZone = document.getElementById("adminUnlockZone");
+    const cellButtons = [];
+
+    function createEmptyMemberLogs() {
+      const logs = {};
+      ALL_MEMBERS.forEach((id) => {
+        logs[id] = [];
+      });
+      return logs;
+    }
+
+    function createEmptyAttemptState() {
+      const state = {};
+      ALL_MEMBERS.forEach((id) => {
+        state[id] = { nextAttemptNum: 1, attemptOpen: false };
+      });
+      return state;
+    }
+
+    function resetMemberTracking() {
+      memberLogs = createEmptyMemberLogs();
+      memberAttemptState = createEmptyAttemptState();
+    }
+
+    /** Grid label: column A–E, row 1–7 (row 1 = bottom) */
+    function formatCellLabel(col, row) {
+      return `${COL_LABELS[col]}${ROWS - row}`;
+    }
+
+    function memberColor(memberId) {
+      const colorIndex = memberId.charCodeAt(0) - "A".charCodeAt(0);
+      return MEMBER_COLORS[colorIndex] || MEMBER_COLORS[0];
+    }
+
+    function personSvgOnGrid(color) {
+      return `
+        <svg class="person-on-grid" viewBox="0 0 40 40" aria-hidden="true">
+          <circle cx="20" cy="11" r="7" fill="${color}" />
+          <path d="M8 34c0-7.2 5.4-12 12-12s12 4.8 12 12" fill="${color}" />
+        </svg>
+      `;
+    }
+
+    /** Mini-human + member letter for grid cells */
+    function playerMarkerOnGrid(memberId, options = {}) {
+      const { showX = false } = options;
+      let extra = `<span class="cell-letter">${memberId}</span>`;
+      if (showX) {
+        extra += `<span class="cell-icon">✕</span>`;
+      }
+      return `${personSvgOnGrid(memberColor(memberId))}${extra}`;
+    }
+
+    /** Open a new participation attempt when a member starts their turn */
+    function beginAttemptIfNeeded(memberId) {
+      const state = memberAttemptState[memberId];
+      if (state.attemptOpen) return;
+
+      memberLogs[memberId].push({
+        attemptNum: state.nextAttemptNum,
+        guesses: [],
+      });
+      state.attemptOpen = true;
+    }
+
+    /** Close attempt after a wrong guess (member leaves the grid) */
+    function endAttempt(memberId) {
+      const state = memberAttemptState[memberId];
+      state.attemptOpen = false;
+      state.nextAttemptNum += 1;
+    }
+
+    /** Record one guess within the current attempt */
+    function recordGuess(memberId, col, row, correct) {
+      beginAttemptIfNeeded(memberId);
+
+      const attempts = memberLogs[memberId];
+      const currentAttempt = attempts[attempts.length - 1];
+      currentAttempt.guesses.push({
+        guessNum: currentAttempt.guesses.length + 1,
+        col,
+        row,
+        label: formatCellLabel(col, row),
+        correct,
+      });
+
+      if (!correct) {
+        endAttempt(memberId);
+      }
+    }
+
+    function recordSuccess(memberId, col, row) {
+      currentRunSteps.push({ member: memberId, col, row });
+      recordGuess(memberId, col, row, true);
+    }
+
+    function getStepOwner(col, row) {
+      const step = currentRunSteps.find((s) => s.col === col && s.row === row);
+      return step ? step.member : null;
+    }
+
+    function setCellContent(btn, html) {
+      btn.innerHTML = html ? `<span class="cell-mark">${html}</span>` : "";
+    }
+
+    function getHiddenPath() {
+      return ROUTES[routeIndex];
+    }
+
+    function cellKey(col, row) {
+      return `${col},${row}`;
+    }
+
+    function getPathCellKeys() {
+      return new Set(getHiddenPath().map((p) => cellKey(p.col, p.row)));
+    }
+
+    function cellsAreAdjacent(a, b) {
+      return Math.abs(a.col - b.col) + Math.abs(a.row - b.row) === 1;
+    }
+
+    function currentMember() {
+      return queue[0];
+    }
+
+    function setStatus(message, tone = "") {
+      statusEl.textContent = message;
+      statusEl.className = "status" + (tone ? ` ${tone}` : "");
+    }
+
+    function defaultPrompt() {
+      if (!routeDrawn) {
+        return "請先按「抽籤」公開抽出本隊路線（1–10）。";
+      }
+      return `路線 ${routeIndex + 1} · 隊員 ${currentMember()} 輪到 — 請選底行任意一格。`;
+    }
+
+    function continuePrompt() {
+      return `猜對 ✓ — 隊員 ${currentMember()} 繼續猜測。`;
+    }
+
+    function updateBallotDisplay(state, routeNum) {
+      ballotDisplayEl.classList.remove("drawing", "drawn");
+      if (state === "idle") {
+        ballotDisplayEl.innerHTML = "尚未抽籤";
+        return;
+      }
+      if (state === "drawing") {
+        ballotDisplayEl.classList.add("drawing");
+        ballotDisplayEl.innerHTML = `抽籤中<span class="ballot-num">${routeNum}</span>`;
+        return;
+      }
+      ballotDisplayEl.classList.add("drawn");
+      ballotDisplayEl.innerHTML = `本隊路線<span class="ballot-num">${routeNum}</span>`;
+    }
+
+    function applyDrawnRoute(index) {
+      routeIndex = index;
+      routeSelect.value = String(index);
+      pathIndex = -1;
+      clearRunProgress();
+      completed = false;
+      inputLocked = false;
+      pathVisible = false;
+      clearFailMarkers();
+      togglePathBtn.classList.remove("active");
+      togglePathBtn.setAttribute("aria-pressed", "false");
+      renderBoard();
+      renderScoreboard();
+    }
+
+    function stopDrawAnimation() {
+      if (drawTimerId !== null) {
+        window.clearInterval(drawTimerId);
+        drawTimerId = null;
+      }
+      isDrawing = false;
+      drawRouteBtn.disabled = false;
+    }
+
+    /** Public ballot: reset team state, animate 1–10, assign route */
+    function drawRoutePublicly() {
+      if (isDrawing) return;
+
+      stopDrawAnimation();
+      resetGame();
+
+      isDrawing = true;
+      drawRouteBtn.disabled = true;
+
+      const started = Date.now();
+      drawTimerId = window.setInterval(() => {
+        const rolling = Math.floor(Math.random() * ROUTES.length) + 1;
+        updateBallotDisplay("drawing", rolling);
+
+        if (Date.now() - started >= DRAW_ANIMATION_MS) {
+          stopDrawAnimation();
+          const finalRoute = Math.floor(Math.random() * ROUTES.length) + 1;
+          routeDrawn = true;
+          applyDrawnRoute(finalRoute - 1);
+          updateBallotDisplay("drawn", finalRoute);
+          setStatus(
+            `已公開抽出路線 ${finalRoute}！隊員 ${currentMember()} 輪到 — 請選底行任意一格。`
+          );
+        }
+      }, DRAW_TICK_MS);
+    }
+
+    function getAttemptableCells() {
+      if (pathIndex < 0) {
+        const bottom = [];
+        for (let col = 0; col < COLS; col++) {
+          bottom.push({ col, row: ROWS - 1 });
+        }
+        return bottom;
+      }
+
+      const current = getHiddenPath()[pathIndex];
+      const neighbors = [];
+      const deltas = [
+        { col: 0, row: -1 },
+        { col: 0, row: 1 },
+        { col: -1, row: 0 },
+        { col: 1, row: 0 },
+      ];
+      for (const d of deltas) {
+        const col = current.col + d.col;
+        const row = current.row + d.row;
+        if (col >= 0 && col < COLS && row >= 0 && row < ROWS) {
+          neighbors.push({ col, row });
+        }
+      }
+      return neighbors;
+    }
+
+    function isAttemptable(col, row) {
+      return getAttemptableCells().some((c) => c.col === col && c.row === row);
+    }
+
+    function personSvg(color) {
+      return `
+        <svg class="person" viewBox="0 0 40 40" aria-hidden="true">
+          <circle cx="20" cy="11" r="7" fill="${color}" />
+          <path d="M8 34c0-7.2 5.4-12 12-12s12 4.8 12 12" fill="${color}" />
+        </svg>
+      `;
+    }
+
+    function buildRouteSelect() {
+      routeSelect.innerHTML = "";
+      ROUTES.forEach((_, i) => {
+        const opt = document.createElement("option");
+        opt.value = String(i);
+        opt.textContent = `路線 ${i + 1}`;
+        routeSelect.appendChild(opt);
+      });
+      routeSelect.value = String(routeIndex);
+    }
+
+    function buildGridLabels() {
+      colLabelsEl.innerHTML = COL_LABELS.map(
+        (letter) => `<span>${letter}</span>`
+      ).join("");
+
+      rowLabelsEl.innerHTML = "";
+      for (let displayRow = ROWS; displayRow >= 1; displayRow--) {
+        const span = document.createElement("span");
+        span.textContent = String(displayRow);
+        rowLabelsEl.appendChild(span);
+      }
+    }
+
+    function buildGrid() {
+      gridEl.innerHTML = "";
+      cellButtons.length = 0;
+
+      for (let row = 0; row < ROWS; row++) {
+        cellButtons[row] = [];
+        for (let col = 0; col < COLS; col++) {
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "cell";
+          btn.dataset.col = String(col);
+          btn.dataset.row = String(row);
+          btn.setAttribute("role", "gridcell");
+          btn.setAttribute("aria-label", `${formatCellLabel(col, row)}`);
+          btn.addEventListener("click", () => handleCellClick(col, row));
+          gridEl.appendChild(btn);
+          cellButtons[row][col] = btn;
+        }
+      }
+    }
+
+    function renderQueue() {
+      queueEl.innerHTML = "";
+      queueNowEl.innerHTML = `現正猜測：<strong>${currentMember()}</strong>`;
+
+      queue.forEach((id, index) => {
+        const colorIndex = id.charCodeAt(0) - "A".charCodeAt(0);
+        const color = MEMBER_COLORS[colorIndex] || MEMBER_COLORS[0];
+        const item = document.createElement("div");
+        item.className = "member" + (index === 0 ? " active" : "");
+        item.setAttribute("role", "listitem");
+        item.innerHTML = `
+          ${personSvg(color)}
+          <span class="member-id">${id}</span>
+          <span class="member-tag">猜測中</span>
+        `;
+        queueEl.appendChild(item);
+      });
+    }
+
+    function renderScoreboard() {
+      scoreboardEl.innerHTML = "";
+      const activeMember = currentMember();
+
+      ALL_MEMBERS.forEach((id) => {
+        const attempts = memberLogs[id];
+        const allGuesses = attempts.flatMap((a) => a.guesses);
+        const correctCount = allGuesses.filter((g) => g.correct).length;
+        const wrongCount = allGuesses.filter((g) => !g.correct).length;
+        const card = document.createElement("div");
+        card.className = "score-card" + (id === activeMember ? " active" : "");
+
+        let attemptsHtml = "";
+        if (!attempts.length) {
+          attemptsHtml = `<div class="empty">—</div>`;
+        } else {
+          attemptsHtml = attempts.map((attempt) => {
+            const guessesHtml = attempt.guesses.map((g) => `
+              <li class="guess ${g.correct ? "correct" : "wrong"}">
+                <span class="guess-num">猜測 ${g.guessNum}</span>
+                <span class="guess-mark">${g.correct ? "✓" : "✕"}</span>
+                <span class="guess-cell">${g.label}</span>
+              </li>
+            `).join("");
+
+            return `
+              <div class="score-attempt">
+                <div class="attempt-head">第 ${attempt.attemptNum} 次參與</div>
+                <ul class="score-hits">${guessesHtml}</ul>
+              </div>
+            `;
+          }).join("");
+        }
+
+        card.innerHTML = `
+          <div class="score-card-head">
+            ${personSvg(memberColor(id))}
+            <span class="score-card-id">${id}</span>
+          </div>
+          <div class="score-card-count">${attempts.length} 次參與 · ✓ ${correctCount} · ✕ ${wrongCount}</div>
+          <div class="score-log-scroll">
+            <div class="score-attempts">${attemptsHtml}</div>
+          </div>
+        `;
+
+        scoreboardEl.appendChild(card);
+      });
+    }
+
+    function renderBoard() {
+      const path = getHiddenPath();
+      const pathCellKeys = getPathCellKeys();
+
+      for (let row = 0; row < ROWS; row++) {
+        for (let col = 0; col < COLS; col++) {
+          const btn = cellButtons[row][col];
+          const onPath = pathCellKeys.has(cellKey(col, row));
+          const isCurrentPlayer =
+            playerPosition &&
+            playerPosition.col === col &&
+            playerPosition.row === row;
+          const isFailCell =
+            failPosition &&
+            failPosition.col === col &&
+            failPosition.row === row &&
+            btn.classList.contains("fail");
+          const progressed =
+            pathIndex >= 0 &&
+            path.slice(0, pathIndex + 1).some(
+              (p) => p.col === col && p.row === row
+            );
+          const ownerId = getStepOwner(col, row);
+
+          btn.classList.remove("correct", "path-hint", "has-player");
+          setCellContent(btn, "");
+
+          if (isFailCell && failMember) {
+            setCellContent(btn, playerMarkerOnGrid(failMember, { showX: true }));
+          } else if (isCurrentPlayer && ownerId) {
+            btn.classList.add("has-player");
+            if (progressed) btn.classList.add("correct");
+            setCellContent(btn, playerMarkerOnGrid(ownerId));
+          } else if (progressed && ownerId) {
+            btn.classList.add("correct");
+            setCellContent(btn, playerMarkerOnGrid(ownerId));
+          } else if (pathVisible && onPath) {
+            btn.classList.add("path-hint");
+          }
+
+          btn.disabled = completed || inputLocked;
+        }
+      }
+    }
+
+    function clearRunProgress() {
+      currentRunSteps = [];
+      playerPosition = null;
+    }
+
+    function clearFailMarkers() {
+      failPosition = null;
+      failMember = null;
+      for (let row = 0; row < ROWS; row++) {
+        for (let col = 0; col < COLS; col++) {
+          cellButtons[row][col].classList.remove("fail");
+        }
+      }
+    }
+
+    function handleCellClick(col, row) {
+      if (!routeDrawn) {
+        setStatus(defaultPrompt());
+        return;
+      }
+      if (inputLocked || completed) return;
+      if (!isAttemptable(col, row)) return;
+
+      const path = getHiddenPath();
+      const nextIndex = pathIndex + 1;
+      const expected = path[nextIndex];
+      const isCorrect = expected && expected.col === col && expected.row === row;
+
+      if (isCorrect) {
+        const member = currentMember();
+        pathIndex = nextIndex;
+        playerPosition = { col, row };
+        recordSuccess(member, col, row);
+        renderBoard();
+        renderScoreboard();
+
+        if (pathIndex === path.length - 1) {
+          completed = true;
+          renderBoard();
+          setStatus(
+            `完成！隊員 ${currentMember()} 帶領隊伍到達終點。`,
+            "success"
+          );
+        } else {
+          setStatus(continuePrompt(), "success");
+        }
+        return;
+      }
+
+      failAndReset(col, row);
+    }
+
+    function rotateQueueAfterMiss() {
+      const missed = queue.shift();
+      queue.push(missed);
+    }
+
+    function failAndReset(col, row) {
+      inputLocked = true;
+      const missedMember = currentMember();
+      setStatus(
+        `隊員 ${missedMember} 猜錯！顯示 ✕ 3 秒…`,
+        "fail"
+      );
+
+      failPosition = { col, row };
+      failMember = missedMember;
+      recordGuess(missedMember, col, row, false);
+      renderScoreboard();
+
+      const btn = cellButtons[row][col];
+      btn.classList.remove("correct", "path-hint", "has-player");
+      btn.classList.add("fail");
+      renderBoard();
+
+      if (failTimerId !== null) {
+        window.clearTimeout(failTimerId);
+      }
+
+      failTimerId = window.setTimeout(() => {
+        failTimerId = null;
+        pathIndex = -1;
+        clearRunProgress();
+        completed = false;
+        inputLocked = false;
+
+        btn.classList.remove("fail");
+        failPosition = null;
+        failMember = null;
+
+        rotateQueueAfterMiss();
+        renderQueue();
+        renderBoard();
+        renderScoreboard();
+        setStatus(
+          `隊員 ${missedMember} 排到隊尾。隊員 ${currentMember()} 輪到 — 請從底行重新開始。`
+        );
+      }, FAIL_DISPLAY_MS);
+    }
+
+    function toggleHiddenPath() {
+      pathVisible = !pathVisible;
+      togglePathBtn.classList.toggle("active", pathVisible);
+      togglePathBtn.setAttribute("aria-pressed", String(pathVisible));
+      renderBoard();
+
+      if (pathVisible) {
+        setStatus(`路線 ${routeIndex + 1} 已顯示（黃色）。再按一次可隱藏。`);
+      } else if (completed) {
+        setStatus(
+          `完成！隊員 ${currentMember()} 帶領隊伍到達終點。`,
+          "success"
+        );
+      } else if (pathIndex < 0) {
+        setStatus(defaultPrompt());
+      } else {
+        setStatus(continuePrompt(), "success");
+      }
+    }
+
+    function selectRoute(nextIndex) {
+      if (failTimerId !== null) {
+        window.clearTimeout(failTimerId);
+        failTimerId = null;
+      }
+
+      routeDrawn = true;
+      routeIndex = nextIndex;
+      routeSelect.value = String(nextIndex);
+      pathIndex = -1;
+      clearRunProgress();
+      resetMemberTracking();
+      completed = false;
+      inputLocked = false;
+      pathVisible = false;
+
+      clearFailMarkers();
+      togglePathBtn.classList.remove("active");
+      togglePathBtn.setAttribute("aria-pressed", "false");
+      updateBallotDisplay("drawn", nextIndex + 1);
+      renderBoard();
+      renderScoreboard();
+      setStatus(`已切換至路線 ${routeIndex + 1}。${defaultPrompt()}`);
+    }
+
+    function resetGame() {
+      stopDrawAnimation();
+
+      if (failTimerId !== null) {
+        window.clearTimeout(failTimerId);
+        failTimerId = null;
+      }
+
+      routeDrawn = false;
+      routeIndex = 0;
+      routeSelect.value = "0";
+      pathIndex = -1;
+      clearRunProgress();
+      completed = false;
+      inputLocked = false;
+      pathVisible = false;
+      queue = ["A", "B", "C", "D", "E", "F", "G"];
+      resetMemberTracking();
+      updateBallotDisplay("idle");
+
+      clearFailMarkers();
+      togglePathBtn.classList.remove("active");
+      togglePathBtn.setAttribute("aria-pressed", "false");
+      renderQueue();
+      renderBoard();
+      renderScoreboard();
+      setStatus(defaultPrompt());
+    }
+
+    function validatePath(path, label) {
+      if (path.length !== PATH_LENGTH) {
+        console.warn(`${label} should have ${PATH_LENGTH} squares (has ${path.length}).`);
+      }
+      if (path[0].row !== ROWS - 1) {
+        console.warn(`${label} should start on the bottom row (row 6).`);
+      }
+      if (path[path.length - 1].row !== 0) {
+        console.warn(`${label} should end on the top row (row 0).`);
+      }
+      const seen = new Set();
+      for (let i = 0; i < path.length; i++) {
+        const key = cellKey(path[i].col, path[i].row);
+        if (seen.has(key)) {
+          console.warn(`${label} revisits cell ${key}.`);
+        }
+        seen.add(key);
+        if (i > 0 && !cellsAreAdjacent(path[i - 1], path[i])) {
+          console.warn(
+            `${label} steps ${i - 1} and ${i} are not adjacent:`,
+            path[i - 1],
+            path[i]
+          );
+        }
+      }
+    }
+
+    function validateAllRoutes() {
+      if (ROUTES.length !== 10) {
+        console.warn(`Expected 10 routes, found ${ROUTES.length}.`);
+      }
+      ROUTES.forEach((path, i) => validatePath(path, `Route ${i + 1}`));
+    }
+
+    function revealAdminControls() {
+      togglePathBtn.hidden = false;
+      togglePathBtn.classList.remove("admin-hidden");
+      togglePathBtn.classList.add("admin-visible");
+    }
+
+    function handleAdminUnlockClick() {
+      if (adminUnlockTimerId !== null) {
+        window.clearTimeout(adminUnlockTimerId);
+      }
+
+      adminUnlockClicks += 1;
+
+      if (adminUnlockClicks >= ADMIN_UNLOCK_CLICKS) {
+        adminUnlockClicks = 0;
+        revealAdminControls();
+        return;
+      }
+
+      // Reset click count if pauses too long between taps
+      adminUnlockTimerId = window.setTimeout(() => {
+        adminUnlockClicks = 0;
+        adminUnlockTimerId = null;
+      }, ADMIN_UNLOCK_RESET_MS);
+    }
+
+    validateAllRoutes();
+    buildRouteSelect();
+    buildGridLabels();
+    buildGrid();
+    renderQueue();
+    renderScoreboard();
+    renderBoard();
+    updateBallotDisplay("idle");
+    togglePathBtn.setAttribute("aria-pressed", "false");
+    togglePathBtn.addEventListener("click", toggleHiddenPath);
+    resetBtn.addEventListener("click", resetGame);
+    drawRouteBtn.addEventListener("click", drawRoutePublicly);
+    adminUnlockZone.addEventListener("click", handleAdminUnlockClick);
+    setStatus(defaultPrompt());
+  </script>
+</body>
+</html>
