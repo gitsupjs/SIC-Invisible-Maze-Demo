@@ -71,7 +71,7 @@
     }
 
     .logo {
-      width: clamp(64px, 9vw, 88px);
+      width: clamp(84px, 12vw, 112px);
       height: auto;
       display: block;
       border-radius: 8px;
@@ -311,6 +311,7 @@
       border-radius: 12px;
       background: var(--cell);
       cursor: pointer;
+      touch-action: manipulation;
       transition:
         background-color 0.2s ease,
         box-shadow 0.2s ease,
@@ -650,6 +651,8 @@
       max-height: 8.5rem;
       overflow-y: auto;
       overflow-x: hidden;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
       padding-right: 0.1rem;
       scrollbar-width: thin;
       scrollbar-color: #c5d4e3 transparent;
@@ -785,8 +788,8 @@
         class="logo"
         src="dream-gym-3-logo.jpeg"
         alt="Dream Gym 3 標誌"
-        width="88"
-        height="92"
+        width="112"
+        height="118"
       />
       <div class="header-copy">
         <div class="eyebrow">Dream Gym 3</div>
@@ -816,12 +819,6 @@
       <div id="queue" class="queue" role="list"></div>
     </div>
 
-    <section class="scoreboard" aria-label="成績紀錄">
-      <div class="scoreboard-title">成績紀錄</div>
-      <p class="scoreboard-hint">參與 = 每次輪到你上場；猜測 = 該次參與內的每次選格</p>
-      <div id="scoreboard" class="scoreboard-grid"></div>
-    </section>
-
     <div class="board-wrap">
       <p id="status" class="status" aria-live="polite">隊員 A 輪到 — 請選底行任意一格。</p>
       <div class="board-grid-area">
@@ -833,6 +830,12 @@
         </div>
       </div>
     </div>
+
+    <section class="scoreboard" aria-label="成績紀錄">
+      <div class="scoreboard-title">成績紀錄</div>
+      <p class="scoreboard-hint">參與 = 每次輪到你上場；猜測 = 該次參與內的每次選格</p>
+      <div id="scoreboard" class="scoreboard-grid"></div>
+    </section>
 
     <div class="controls">
       <div class="route-picker">
@@ -1261,11 +1264,6 @@
             <div class="score-attempts">${attemptsHtml}</div>
           </div>
         `;
-
-        const scrollEl = card.querySelector(".score-log-scroll");
-        if (scrollEl) {
-          scrollEl.scrollTop = scrollEl.scrollHeight;
-        }
 
         scoreboardEl.appendChild(card);
       });
