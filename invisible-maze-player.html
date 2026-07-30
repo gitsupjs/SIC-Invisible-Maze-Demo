@@ -1037,17 +1037,17 @@
     </header>
 
     <section class="planning-panel" aria-label="賽前策略討論">
-      <div class="planning-badge">練習路線僅 2 格 · 規則與正式比賽相同</div>
+      <div class="planning-badge">練習路線 · 行 1 至 7 · 2 個轉彎</div>
       <div class="planning-title">小隊策略討論</div>
       <p class="planning-hint">
-        賽前分組規劃時使用本頁：路線<strong>隱藏</strong>，只需走 2 格即可完成練習。
-        請一起試玩、記錄嘗試、討論溝通方式——正式比賽時路線更長，且每隊不同。
+        賽前分組規劃時使用本頁：路線<strong>隱藏</strong>，由底行（行 1）走至頂行（行 7），途中僅有 2 個轉彎。
+        請一起試玩、討論溝通方式——正式比賽路線更長，且每隊不同。
       </p>
       <ul class="planning-questions">
         <li>誰負責記錄已試過的格子？如何避免重複錯誤？</li>
         <li>猜錯後，如何把資訊傳給下一位隊員？</li>
         <li>隊伍輪換時，如何快速交接目前進度？</li>
-        <li>完成練習後，按「顯示／隱藏路線」對照你們的策略。</li>
+        <li>完成練習後，一起檢討哪種溝通方式最有效。</li>
       </ul>
     </section>
 
@@ -1071,14 +1071,7 @@
       </div>
     </div>
 
-    <section class="scoreboard" aria-label="成績紀錄">
-      <div class="scoreboard-title">成績紀錄</div>
-      <p class="scoreboard-hint">記錄每次參與與猜測，方便小隊檢討策略</p>
-      <div id="scoreboard" class="scoreboard-grid"></div>
-    </section>
-
     <div class="controls">
-      <button type="button" id="togglePathBtn" class="btn btn-primary">顯示／隱藏路線</button>
       <button type="button" id="resetBtn" class="btn btn-secondary">重新開始</button>
     </div>
 
@@ -1091,24 +1084,32 @@
         <li>之後：只能選與現位置<strong>上下左右相鄰</strong>的格子。</li>
         <li>猜對 <strong>✓</strong>：該隊員繼續猜，進度保留。</li>
         <li>猜錯 <strong>✕</strong>：顯示 3 秒，進度清零，該隊員排到<strong>隊尾</strong>。</li>
-        <li>本練習只需走完整條<strong>2 格</strong>隱藏路線即完成；正式比賽為 12 格。</li>
+        <li>本練習路線由<strong>行 1 至行 7</strong>，含 <strong>2 個轉彎</strong>；正式比賽為 12 格且每隊路線不同。</li>
       </ul>
     </section>
   </div>
 
   <script>
-    // =============================================================================
-    // PRACTICE MAZE — 2-cell route for pre-game strategy discussion
-    // =============================================================================
+    // PRACTICE MAZE — row 1→7 with 2 turns, for pre-game strategy discussion
 
     const COLS = 5;
     const ROWS = 7;
     const FAIL_DISPLAY_MS = 3000;
 
-    /** 2-step practice path: D7 → D6 (bottom row entrance, one step up) */
+    /**
+     * Practice path: D1 → D7 (display rows 1–7), with 2 turns at C3 and D5.
+     * D1→D2→D3 → C3 (turn 1) → C4→C5 → D5 (turn 2) → D6→D7
+     */
     const PRACTICE_PATH = [
       { col: 3, row: 6 },
       { col: 3, row: 5 },
+      { col: 3, row: 4 },
+      { col: 2, row: 4 },
+      { col: 2, row: 3 },
+      { col: 2, row: 2 },
+      { col: 3, row: 2 },
+      { col: 3, row: 1 },
+      { col: 3, row: 0 },
     ];
 
     const MEMBER_COLORS = [
@@ -1122,7 +1123,6 @@
     const COL_LABELS = ["A", "B", "C", "D", "E"];
 
     let pathIndex = -1;
-    let pathVisible = false;
     let inputLocked = false;
     let completed = false;
     let queue = ["A", "B", "C", "D", "E", "F", "G"];
@@ -1140,43 +1140,14 @@
     /** Successful steps in the current run (cleared on fail) */
     let currentRunSteps = [];
 
-    /** Full log per member: attempts → guesses */
-    let memberLogs = createEmptyMemberLogs();
-
-    /** Tracks whether each member has an open attempt in progress */
-    let memberAttemptState = createEmptyAttemptState();
-
     const gridEl = document.getElementById("grid");
     const colLabelsEl = document.getElementById("colLabels");
     const rowLabelsEl = document.getElementById("rowLabels");
     const statusEl = document.getElementById("status");
     const queueEl = document.getElementById("queue");
     const queueNowEl = document.getElementById("queueNow");
-    const scoreboardEl = document.getElementById("scoreboard");
-    const togglePathBtn = document.getElementById("togglePathBtn");
     const resetBtn = document.getElementById("resetBtn");
     const cellButtons = [];
-
-    function createEmptyMemberLogs() {
-      const logs = {};
-      ALL_MEMBERS.forEach((id) => {
-        logs[id] = [];
-      });
-      return logs;
-    }
-
-    function createEmptyAttemptState() {
-      const state = {};
-      ALL_MEMBERS.forEach((id) => {
-        state[id] = { nextAttemptNum: 1, attemptOpen: false };
-      });
-      return state;
-    }
-
-    function resetMemberTracking() {
-      memberLogs = createEmptyMemberLogs();
-      memberAttemptState = createEmptyAttemptState();
-    }
 
     /** Grid label: column A–E, row 1–7 (row 1 = bottom) */
     function formatCellLabel(col, row) {
@@ -1207,47 +1178,8 @@
       return `${personSvgOnGrid(memberColor(memberId))}${extra}`;
     }
 
-    /** Open a new participation attempt when a member starts their turn */
-    function beginAttemptIfNeeded(memberId) {
-      const state = memberAttemptState[memberId];
-      if (state.attemptOpen) return;
-
-      memberLogs[memberId].push({
-        attemptNum: state.nextAttemptNum,
-        guesses: [],
-      });
-      state.attemptOpen = true;
-    }
-
-    /** Close attempt after a wrong guess (member leaves the grid) */
-    function endAttempt(memberId) {
-      const state = memberAttemptState[memberId];
-      state.attemptOpen = false;
-      state.nextAttemptNum += 1;
-    }
-
-    /** Record one guess within the current attempt */
-    function recordGuess(memberId, col, row, correct) {
-      beginAttemptIfNeeded(memberId);
-
-      const attempts = memberLogs[memberId];
-      const currentAttempt = attempts[attempts.length - 1];
-      currentAttempt.guesses.push({
-        guessNum: currentAttempt.guesses.length + 1,
-        col,
-        row,
-        label: formatCellLabel(col, row),
-        correct,
-      });
-
-      if (!correct) {
-        endAttempt(memberId);
-      }
-    }
-
     function recordSuccess(memberId, col, row) {
       currentRunSteps.push({ member: memberId, col, row });
-      recordGuess(memberId, col, row, true);
     }
 
     function getStepOwner(col, row) {
@@ -1385,63 +1317,12 @@
       });
     }
 
-    function renderScoreboard() {
-      scoreboardEl.innerHTML = "";
-      const activeMember = currentMember();
-
-      ALL_MEMBERS.forEach((id) => {
-        const attempts = memberLogs[id];
-        const allGuesses = attempts.flatMap((a) => a.guesses);
-        const correctCount = allGuesses.filter((g) => g.correct).length;
-        const wrongCount = allGuesses.filter((g) => !g.correct).length;
-        const card = document.createElement("div");
-        card.className = "score-card" + (id === activeMember ? " active" : "");
-
-        let attemptsHtml = "";
-        if (!attempts.length) {
-          attemptsHtml = `<div class="empty">—</div>`;
-        } else {
-          attemptsHtml = attempts.map((attempt) => {
-            const guessesHtml = attempt.guesses.map((g) => `
-              <li class="guess ${g.correct ? "correct" : "wrong"}">
-                <span class="guess-num">猜測 ${g.guessNum}</span>
-                <span class="guess-mark">${g.correct ? "✓" : "✕"}</span>
-                <span class="guess-cell">${g.label}</span>
-              </li>
-            `).join("");
-
-            return `
-              <div class="score-attempt">
-                <div class="attempt-head">第 ${attempt.attemptNum} 次參與</div>
-                <ul class="score-hits">${guessesHtml}</ul>
-              </div>
-            `;
-          }).join("");
-        }
-
-        card.innerHTML = `
-          <div class="score-card-head">
-            ${personSvg(memberColor(id))}
-            <span class="score-card-id">${id}</span>
-          </div>
-          <div class="score-card-count">${attempts.length} 次參與 · ✓ ${correctCount} · ✕ ${wrongCount}</div>
-          <div class="score-log-scroll">
-            <div class="score-attempts">${attemptsHtml}</div>
-          </div>
-        `;
-
-        scoreboardEl.appendChild(card);
-      });
-    }
-
     function renderBoard() {
       const path = getHiddenPath();
-      const pathCellKeys = getPathCellKeys();
 
       for (let row = 0; row < ROWS; row++) {
         for (let col = 0; col < COLS; col++) {
           const btn = cellButtons[row][col];
-          const onPath = pathCellKeys.has(cellKey(col, row));
           const isCurrentPlayer =
             playerPosition &&
             playerPosition.col === col &&
@@ -1470,8 +1351,6 @@
           } else if (progressed && ownerId) {
             btn.classList.add("correct");
             setCellContent(btn, playerMarkerOnGrid(ownerId));
-          } else if (pathVisible && onPath) {
-            btn.classList.add("path-hint");
           }
 
           btn.disabled = completed || inputLocked;
@@ -1509,13 +1388,12 @@
         playerPosition = { col, row };
         recordSuccess(member, col, row);
         renderBoard();
-        renderScoreboard();
 
         if (pathIndex === path.length - 1) {
           completed = true;
           renderBoard();
           setStatus(
-            `練習完成！隊員 ${currentMember()} 走完了 2 格路線。討論一下你們的策略吧。`,
+            `練習完成！隊員 ${currentMember()} 走完了全程（行 1 至行 7）。討論一下你們的策略吧。`,
             "success"
           );
         } else {
@@ -1542,8 +1420,6 @@
 
       failPosition = { col, row };
       failMember = missedMember;
-      recordGuess(missedMember, col, row, false);
-      renderScoreboard();
 
       const btn = cellButtons[row][col];
       btn.classList.remove("correct", "path-hint", "has-player");
@@ -1568,31 +1444,10 @@
         rotateQueueAfterMiss();
         renderQueue();
         renderBoard();
-        renderScoreboard();
         setStatus(
           `隊員 ${missedMember} 排到隊尾。隊員 ${currentMember()} 輪到 — 請從底行重新開始。`
         );
       }, FAIL_DISPLAY_MS);
-    }
-
-    function toggleHiddenPath() {
-      pathVisible = !pathVisible;
-      togglePathBtn.classList.toggle("active", pathVisible);
-      togglePathBtn.setAttribute("aria-pressed", String(pathVisible));
-      renderBoard();
-
-      if (pathVisible) {
-        setStatus("練習路線已顯示（黃色）。再按一次可隱藏。");
-      } else if (completed) {
-        setStatus(
-          `練習完成！隊員 ${currentMember()} 走完了 2 格路線。討論一下你們的策略吧。`,
-          "success"
-        );
-      } else if (pathIndex < 0) {
-        setStatus(defaultPrompt());
-      } else {
-        setStatus(continuePrompt(), "success");
-      }
     }
 
     function resetGame() {
@@ -1605,16 +1460,11 @@
       clearRunProgress();
       completed = false;
       inputLocked = false;
-      pathVisible = false;
       queue = ["A", "B", "C", "D", "E", "F", "G"];
-      resetMemberTracking();
 
       clearFailMarkers();
-      togglePathBtn.classList.remove("active");
-      togglePathBtn.setAttribute("aria-pressed", "false");
       renderQueue();
       renderBoard();
-      renderScoreboard();
       setStatus(defaultPrompt());
     }
 
@@ -1639,10 +1489,7 @@
     buildGridLabels();
     buildGrid();
     renderQueue();
-    renderScoreboard();
     renderBoard();
-    togglePathBtn.setAttribute("aria-pressed", "false");
-    togglePathBtn.addEventListener("click", toggleHiddenPath);
     resetBtn.addEventListener("click", resetGame);
     setStatus(defaultPrompt());
   </script>
