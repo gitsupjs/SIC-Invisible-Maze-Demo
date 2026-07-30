@@ -186,11 +186,38 @@
     }
 
     .planning-questions li::before {
-      content: "？";
+      content: "→";
       position: absolute;
       left: 0;
       font-weight: 800;
       color: var(--brand-orange);
+    }
+
+    .rules-intro {
+      font-size: 0.86rem;
+      line-height: 1.55;
+      color: var(--ink);
+      margin-bottom: 0.85rem;
+    }
+
+    .rules-subtitle {
+      font-size: 0.8rem;
+      font-weight: 800;
+      color: var(--brand-blue);
+      margin: 0.7rem 0 0.4rem;
+    }
+
+    .rules-subtitle:first-of-type {
+      margin-top: 0;
+    }
+
+    .rules-note {
+      font-size: 0.78rem;
+      color: var(--muted);
+      line-height: 1.45;
+      margin-top: 0.75rem;
+      padding-top: 0.65rem;
+      border-top: 1px solid var(--line);
     }
 
     /* ---------- Compact top queue ---------- */
@@ -1037,17 +1064,17 @@
     </header>
 
     <section class="planning-panel" aria-label="賽前策略討論">
-      <div class="planning-badge">練習路線 · 行 1 至 7 · 2 個轉彎</div>
+      <div class="planning-badge">賽前練習 · 路線隱藏 · 正式比賽前討論用</div>
       <div class="planning-title">小隊策略討論</div>
       <p class="planning-hint">
-        賽前分組規劃時使用本頁：路線<strong>隱藏</strong>，由底行（行 1）走至頂行（行 7），途中僅有 2 個轉彎。
-        請一起試玩、討論溝通方式——正式比賽路線更長，且每隊不同。
+        先一起試玩本頁，感受規則壓力；正式比賽路線更長、每隊不同。
+        以下只給思考方向——具體做法由你們自己訂。
       </p>
       <ul class="planning-questions">
-        <li>誰負責記錄已試過的格子？如何避免重複錯誤？</li>
-        <li>猜錯後，如何把資訊傳給下一位隊員？</li>
-        <li>隊伍輪換時，如何快速交接目前進度？</li>
-        <li>完成練習後，一起檢討哪種溝通方式最有效。</li>
+        <li>一個人踩錯離場後，隊上還剩下什麼「有用資訊」？</li>
+        <li>不能說話時，你們打算用什麼方式交接？</li>
+        <li>個人試錯怎樣才不會白費，而能變成全隊共有的東西？</li>
+        <li>時間有限時，你們願意在「探索」與「推進」之間如何取捨？</li>
       </ul>
     </section>
 
@@ -1076,16 +1103,37 @@
     </div>
 
     <section class="rules" aria-label="遊戲規則">
-      <div class="rules-title">遊戲規則（與正式比賽相同）</div>
+      <div class="rules-title">活動簡介與目的</div>
+      <p class="rules-intro">
+        《隱形迷宮》是一個結合高壓心理、記憶遺傳與非語言溝通的高階團隊歷奇項目。
+        學員需要在被剝奪語言能力、面對時間倒數以及未知地雷陷阱的多重壓力下，冷靜制定策略，
+        並將個人試錯轉化為團隊資產，最終全隊成功跨越雷區。
+      </p>
+
+      <div class="rules-title">遊戲規則</div>
+
+      <div class="rules-subtitle">進場與移動</div>
       <ul class="rules-list">
-        <li>格子以<strong>欄 A–E</strong>（左至右）、<strong>行 1–7</strong>（底至頂）標示。</li>
-        <li>7 位隊員（<strong>A–G</strong>）按順序輪流猜測。</li>
-        <li>第一步：可選<strong>底行任意一格</strong>（選錯入口也算失敗）。</li>
-        <li>之後：只能選與現位置<strong>上下左右相鄰</strong>的格子。</li>
-        <li>猜對 <strong>✓</strong>：該隊員繼續猜，進度保留。</li>
-        <li>猜錯 <strong>✕</strong>：顯示 3 秒，進度清零，該隊員排到<strong>隊尾</strong>。</li>
-        <li>本練習路線由<strong>行 1 至行 7</strong>，含 <strong>2 個轉彎</strong>；正式比賽為 12 格且每隊路線不同。</li>
+        <li>每次派 <strong>1 人</strong> 由起點入陣。</li>
+        <li>踩中安全格可繼續向前、向左或向右移動一格（<strong>嚴禁斜行</strong>）。</li>
+        <li>踩中地雷格時，裁判將吹響哨子，該名學員需即時退回隊尾，下一位隊友即時補上繼續嘗試。</li>
+        <li>格子標示：欄 <strong>A–E</strong>（左至右）、行 <strong>1–7</strong>（底至頂）；本頁練習可先熟悉操作。</li>
       </ul>
+
+      <div class="rules-subtitle">禁言與違規</div>
+      <ul class="rules-list">
+        <li>全場進入「<strong>靜默模式</strong>」，嚴禁任何口語發聲，只能使用手勢、眼神或肢體語言溝通。</li>
+        <li>每出現一次發聲違規，裁判將於最終完成時間上<strong>加時 5 秒</strong>。</li>
+      </ul>
+
+      <div class="rules-subtitle">通關條件</div>
+      <ul class="rules-list">
+        <li>在 <strong>25 分鐘</strong> 的正式遊戲時間內，全隊必須全部順利由起點穿越雷區抵達終點。</li>
+      </ul>
+
+      <p class="rules-note">
+        本頁為賽前練習：路線隱藏，僅供小隊熟悉規則與討論策略；正式比賽路線更長，且各隊不同。
+      </p>
     </section>
   </div>
 
