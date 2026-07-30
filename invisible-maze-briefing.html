@@ -574,8 +574,8 @@
       <div class="demo-badge">隱藏路線 · 互動示範</div>
       <div class="section-title">規則示範</div>
       <p class="section-hint">
-        路線對參與者<strong>完全隱藏</strong>。主禮賓可故意點選<strong>正確或錯誤</strong>的格子，
-        向全體示範 ✓ 繼續猜測、✕ 失敗重置及隊伍輪換的效果。
+        路線對參與者<strong>完全隱藏</strong>。主禮賓依真實規則操作：第一步只能選<strong>底行</strong>，
+        之後只能選<strong>相鄰格</strong>；點錯可示範 ✕ 失敗重置及隊伍輪換。
       </p>
 
       <div class="queue-bar">
@@ -585,7 +585,7 @@
       </div>
 
       <div class="board-wrap" style="margin-top:0.65rem">
-        <p id="status" class="status">示範：隊員 A 輪到 — 請點選格子示範玩法（路線隱藏）。</p>
+        <p id="status" class="status">示範：隊員 A 輪到 — 請選底行任意一格。</p>
         <div class="board-grid-area">
           <div class="grid-corner" aria-hidden="true"></div>
           <div id="colLabels" class="col-labels" aria-hidden="true"></div>
@@ -654,7 +654,7 @@
         <summary>主禮賓操作指引（點擊展開）</summary>
         <ol>
           <li>以<strong>單一投影</strong>開啟本頁，向全體參與者簡介規則。</li>
-          <li>使用上方<strong>互動示範</strong>：路線對參與者隱藏，主禮賓故意點選正確／錯誤格子示範 ✓ 與 ✕ 效果（示範用直線路線為 C 欄由下至上，僅供主禮賓參考）。</li>
+          <li>使用上方<strong>互動示範</strong>：路線對參與者隱藏，規則與導師版相同（底行起步、相鄰格移動）；可故意點錯底行或相鄰格示範 ✕（示範用直線路線為 C 欄由下至上，僅供主禮賓參考）。</li>
           <li>示範後進行<strong>三隊公開抽籤</strong>：建議逐隊抽籤以增加儀式感，或按「一次抽完三隊」。</li>
           <li>宣讀各隊路線編號，並將下方<strong>導師版連結</strong>發給各隊導師。</li>
           <li>各隊導師在實體地格進行遊戲，使用導師版同步記錄成績。</li>
@@ -758,6 +758,44 @@
       return step ? step.member : null;
     }
 
+    function getAttemptableCells() {
+      if (pathIndex < 0) {
+        const bottom = [];
+        for (let col = 0; col < COLS; col++) {
+          bottom.push({ col, row: ROWS - 1 });
+        }
+        return bottom;
+      }
+
+      const current = DEMO_PATH[pathIndex];
+      const neighbors = [];
+      const deltas = [
+        { col: 0, row: -1 },
+        { col: 0, row: 1 },
+        { col: -1, row: 0 },
+        { col: 1, row: 0 },
+      ];
+      for (const d of deltas) {
+        const col = current.col + d.col;
+        const row = current.row + d.row;
+        if (col >= 0 && col < COLS && row >= 0 && row < ROWS) {
+          neighbors.push({ col, row });
+        }
+      }
+      return neighbors;
+    }
+
+    function isAttemptable(col, row) {
+      return getAttemptableCells().some((c) => c.col === col && c.row === row);
+    }
+
+    function defaultPrompt() {
+      if (pathIndex < 0) {
+        return `示範：隊員 ${currentMember()} 輪到 — 請選底行任意一格。`;
+      }
+      return `猜對 ✓ — 隊員 ${currentMember()} 繼續猜測。`;
+    }
+
     function buildGridLabels() {
       colLabelsEl.innerHTML = COL_LABELS.map((l) => `<span>${l}</span>`).join("");
       rowLabelsEl.innerHTML = "";
@@ -831,6 +869,7 @@
 
     function handleCellClick(col, row) {
       if (inputLocked || completed) return;
+      if (!isAttemptable(col, row)) return;
 
       const nextIndex = pathIndex + 1;
       const expected = DEMO_PATH[nextIndex];
@@ -895,7 +934,7 @@
       queue = [...ALL_MEMBERS];
       renderQueue();
       renderBoard();
-      setStatus("示範：隊員 A 輪到 — 請點選格子示範玩法（路線隱藏）。");
+      setStatus(defaultPrompt());
     }
 
     function shuffleArray(arr) {
