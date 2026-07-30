@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>隱形迷宮 — 主禮賓簡報版</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&family=Outfit:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg-top: #eaf3fb;
+      --bg-bottom: #f8fbff;
+      --surface: #ffffff;
+      --ink: #16324f;
+      --muted: #5a7190;
+      --line: #d7e3ef;
+      --cell: #d8e2ec;
+      --success: #22c55e;
+      --fail: #ef4444;
+      --path-hint: #fde68a;
+      --path-outline: #f59e0b;
+      --brand-blue: #1a3d6d;
+      --brand-orange: #f15a24;
+      --shadow: 0 18px 50px rgba(22, 50, 79, 0.12);
+      --radius: 16px;
+      --cols: 5;
+      --rows: 7;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      font-family: "Noto Sans TC", "Outfit", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(ellipse 70% 45% at 50% -8%, #c5dff3 0%, transparent 55%),
+        linear-gradient(180deg, var(--bg-top), var(--bg-bottom));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.25rem 1.25rem 1.75rem;
+    }
+
+    .app {
+      width: min(900px, 100%);
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+    }
+
+    .header {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 0.5rem 0.75rem;
+      align-items: center;
+      background: var(--surface);
+      border-radius: calc(var(--radius) + 4px);
+      padding: 0.5rem 0.75rem;
+      box-shadow: var(--shadow);
+    }
+
+    .logo {
+      width: clamp(108px, 18vw, 148px);
+      height: auto;
+      display: block;
+      border-radius: 8px;
+    }
+
+    .header-copy { min-width: 0; }
+
+    .eyebrow {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      color: var(--brand-orange);
+    }
+
+    h1 {
+      font-size: clamp(1.35rem, 4vw, 1.65rem);
+      font-weight: 800;
+      color: var(--brand-blue);
+      line-height: 1.15;
+    }
+
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem 0.85rem;
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-top: 0.15rem;
+    }
+
+    .meta strong { color: var(--ink); }
+
+    .section {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 0.85rem 1rem;
+      box-shadow: var(--shadow);
+    }
+
+    .section-title {
+      font-size: 0.95rem;
+      font-weight: 800;
+      color: var(--brand-blue);
+      margin-bottom: 0.35rem;
+    }
+
+    .section-hint {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-bottom: 0.65rem;
+      line-height: 1.45;
+    }
+
+    .demo-badge {
+      display: inline-block;
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: #92400e;
+      background: #fef3c7;
+      border: 1px solid #fcd34d;
+      border-radius: 999px;
+      padding: 0.15rem 0.55rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .queue-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.5rem 0.75rem;
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 0.55rem 0.75rem;
+      box-shadow: var(--shadow);
+    }
+
+    .queue-title {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--brand-blue);
+    }
+
+    .queue {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+    }
+
+    .member {
+      display: flex;
+      align-items: center;
+      gap: 0.2rem;
+      padding: 0.2rem 0.45rem;
+      border-radius: 999px;
+      background: #eef4fa;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .member.active {
+      background: #dbeafe;
+      color: var(--brand-blue);
+      box-shadow: 0 0 0 2px rgba(26, 61, 109, 0.15);
+    }
+
+    .person {
+      width: 18px;
+      height: 18px;
+    }
+
+    .board-wrap {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 0.75rem;
+      box-shadow: var(--shadow);
+    }
+
+    .status {
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-align: center;
+      margin-bottom: 0.6rem;
+      min-height: 1.4em;
+    }
+
+    .status.success { color: #15803d; }
+    .status.fail { color: #b91c1c; }
+
+    .board-grid-area {
+      display: grid;
+      grid-template-columns: 1.5rem 1fr;
+      grid-template-rows: auto 1fr;
+      gap: 0.25rem 0.35rem;
+      max-width: 360px;
+      margin: 0 auto;
+    }
+
+    .col-labels, .row-labels {
+      display: grid;
+      font-size: 0.72rem;
+      font-weight: 800;
+      color: var(--brand-blue);
+    }
+
+    .col-labels {
+      grid-column: 2;
+      grid-template-columns: repeat(var(--cols), 1fr);
+      text-align: center;
+    }
+
+    .row-labels {
+      grid-template-rows: repeat(var(--rows), 1fr);
+      align-items: center;
+      text-align: center;
+    }
+
+    .grid-with-rows {
+      display: grid;
+      grid-template-columns: 1.5rem 1fr;
+      gap: 0.35rem;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(var(--cols), 1fr);
+      grid-template-rows: repeat(var(--rows), 1fr);
+      gap: 0.3rem;
+      aspect-ratio: 5 / 7;
+    }
+
+    .cell {
+      border: none;
+      border-radius: 8px;
+      background: var(--cell);
+      cursor: pointer;
+      position: relative;
+      min-height: 0;
+      transition: background 0.15s, box-shadow 0.15s;
+    }
+
+    .cell:hover:not(:disabled) { background: #c5d4e3; }
+
+    .cell.correct {
+      background: var(--success);
+      box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.5);
+    }
+
+    .cell.fail {
+      background: var(--fail);
+      animation: shake 0.35s ease;
+    }
+
+    .cell.path-hint {
+      background: var(--path-hint);
+      box-shadow: inset 0 0 0 2px var(--path-outline);
+    }
+
+    .cell:disabled { cursor: default; opacity: 0.85; }
+
+    .cell-mark {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+
+    .person-on-grid { width: 55%; height: 55%; }
+    .cell-letter {
+      position: absolute;
+      bottom: 8%;
+      right: 10%;
+      font-size: 0.55rem;
+      font-weight: 800;
+      color: #fff;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.35);
+    }
+
+    .cell-icon {
+      position: absolute;
+      font-size: 1rem;
+      font-weight: 900;
+      color: #fff;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-3px); }
+      75% { transform: translateX(3px); }
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      justify-content: center;
+    }
+
+    .btn {
+      border: none;
+      border-radius: 10px;
+      padding: 0.55rem 1rem;
+      font-family: inherit;
+      font-size: 0.82rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.1s, opacity 0.15s;
+    }
+
+    .btn:active { transform: scale(0.98); }
+    .btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+    .btn-primary {
+      background: var(--brand-blue);
+      color: #fff;
+    }
+
+    .btn-secondary {
+      background: #e8eef5;
+      color: var(--brand-blue);
+    }
+
+    .btn-accent {
+      background: var(--brand-orange);
+      color: #fff;
+    }
+
+    /* ---------- 3-team ballot ---------- */
+    .ballot-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.65rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .team-card {
+      border: 2px solid var(--line);
+      border-radius: 12px;
+      padding: 0.65rem 0.5rem;
+      text-align: center;
+      background: #f8fbff;
+    }
+
+    .team-card.done {
+      border-color: #86efac;
+      background: #f0fdf4;
+    }
+
+    .team-card.drawing {
+      border-color: #fcd34d;
+      background: #fffbeb;
+    }
+
+    .team-name {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--brand-blue);
+      margin-bottom: 0.35rem;
+    }
+
+    .team-route {
+      font-size: 1.75rem;
+      font-weight: 800;
+      color: var(--brand-orange);
+      line-height: 1.1;
+      min-height: 2rem;
+    }
+
+    .team-route.idle {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--muted);
+    }
+
+    .team-route.drawing {
+      animation: ballot-pulse 0.12s ease-in-out infinite alternate;
+    }
+
+    @keyframes ballot-pulse {
+      from { opacity: 0.5; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1.05); }
+    }
+
+    .ballot-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      justify-content: center;
+      margin-bottom: 0.65rem;
+    }
+
+    .results-panel {
+      border-top: 1px solid var(--line);
+      padding-top: 0.75rem;
+      margin-top: 0.25rem;
+    }
+
+    .results-title {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--brand-blue);
+      margin-bottom: 0.45rem;
+    }
+
+    .results-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .results-list li {
+      font-size: 0.8rem;
+      padding: 0.4rem 0.55rem;
+      background: #f0f7ff;
+      border-radius: 8px;
+      line-height: 1.4;
+    }
+
+    .results-list a {
+      color: var(--brand-orange);
+      font-weight: 700;
+      word-break: break-all;
+    }
+
+    .rules-list {
+      list-style: none;
+      font-size: 0.8rem;
+      line-height: 1.55;
+      color: var(--ink);
+    }
+
+    .rules-list li {
+      padding-left: 1rem;
+      position: relative;
+      margin-bottom: 0.25rem;
+    }
+
+    .rules-list li::before {
+      content: "•";
+      position: absolute;
+      left: 0;
+      color: var(--brand-orange);
+      font-weight: 900;
+    }
+
+    .host-guide details {
+      font-size: 0.8rem;
+      line-height: 1.55;
+    }
+
+    .host-guide summary {
+      cursor: pointer;
+      font-weight: 700;
+      color: var(--brand-blue);
+      padding: 0.35rem 0;
+    }
+
+    .host-guide ol, .host-guide ul {
+      margin: 0.5rem 0 0.5rem 1.2rem;
+    }
+
+    .host-guide li { margin-bottom: 0.25rem; }
+
+    @media (max-width: 640px) {
+      .header { grid-template-columns: 1fr; justify-items: center; text-align: center; }
+      .meta { justify-content: center; }
+      .ballot-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <img class="logo" src="dream-gym-3-logo.jpeg" alt="Dream Gym 3 標誌" width="148" height="154" />
+      <div class="header-copy">
+        <div class="eyebrow">Dream Gym 3</div>
+        <h1>隱形迷宮</h1>
+        <div class="meta">
+          <div><span>課程：</span><strong>SIC 2/2026</strong></div>
+          <div><span>環節：</span><strong>活動式領導訓練</strong></div>
+          <div><span>模式：</span><strong>主禮賓簡報版</strong></div>
+        </div>
+      </div>
+    </header>
+
+    <section class="section" aria-label="直線路線示範">
+      <div class="demo-badge">示範用直線路線（C 欄由下至上）</div>
+      <div class="section-title">規則示範</div>
+      <p class="section-hint">
+        向全體參與者示範玩法：黃色為示範正確路線（實際遊戲中路線隱藏）。
+        7 位隊員輪流猜測，猜對可繼續，猜錯則回到起點並排到隊尾。
+      </p>
+
+      <div class="queue-bar">
+        <span class="queue-title">隊伍輪候</span>
+        <span id="queueNow">現正猜測：<strong>A</strong></span>
+        <div id="queue" class="queue" role="list"></div>
+      </div>
+
+      <div class="board-wrap" style="margin-top:0.65rem">
+        <p id="status" class="status">示範：隊員 A 輪到 — 請沿 C 欄底行開始猜測。</p>
+        <div class="board-grid-area">
+          <div aria-hidden="true"></div>
+          <div id="colLabels" class="col-labels" aria-hidden="true"></div>
+          <div class="grid-with-rows">
+            <div id="rowLabels" class="row-labels" aria-hidden="true"></div>
+            <div id="grid" class="grid" role="grid" aria-label="示範迷宮"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="controls" style="margin-top:0.65rem">
+        <button type="button" id="resetDemoBtn" class="btn btn-secondary">重設示範</button>
+      </div>
+    </section>
+
+    <section class="section" aria-label="三隊公開抽籤">
+      <div class="section-title">三隊公開抽籤</div>
+      <p class="section-hint">
+        為三隊各抽出一條<strong>不同</strong>的路線（共 10 條路線，難度相同）。
+        抽籤完成後，請各隊導師開啟<strong>導師版</strong>並設定對應路線。
+      </p>
+
+      <div class="ballot-grid" id="ballotGrid">
+        <div class="team-card" data-team="1">
+          <div class="team-name">第 1 隊</div>
+          <div class="team-route idle" id="teamRoute1">尚未抽籤</div>
+        </div>
+        <div class="team-card" data-team="2">
+          <div class="team-name">第 2 隊</div>
+          <div class="team-route idle" id="teamRoute2">尚未抽籤</div>
+        </div>
+        <div class="team-card" data-team="3">
+          <div class="team-name">第 3 隊</div>
+          <div class="team-route idle" id="teamRoute3">尚未抽籤</div>
+        </div>
+      </div>
+
+      <div class="ballot-actions">
+        <button type="button" id="drawNextBtn" class="btn btn-accent">抽下一隊</button>
+        <button type="button" id="drawAllBtn" class="btn btn-primary">一次抽完三隊</button>
+        <button type="button" id="resetBallotBtn" class="btn btn-secondary">重設抽籤</button>
+      </div>
+
+      <div class="results-panel" id="resultsPanel" hidden>
+        <div class="results-title">導師版連結（抽籤完成後發給各隊導師）</div>
+        <ul class="results-list" id="resultsList"></ul>
+      </div>
+    </section>
+
+    <section class="section rules" aria-label="遊戲規則">
+      <div class="section-title">遊戲規則（向參與者宣讀）</div>
+      <ul class="rules-list">
+        <li>格子以<strong>欄 A–E</strong>（左至右）、<strong>行 1–7</strong>（底至頂）標示。</li>
+        <li>7 位隊員（<strong>A–G</strong>）按順序輪流猜測，只有最前方者負責選格。</li>
+        <li>第一步：可選<strong>底行任意一格</strong>（選錯入口也算失敗）。</li>
+        <li>之後：只能選與現位置<strong>上下左右相鄰</strong>的格子。</li>
+        <li>猜對 <strong>✓</strong>：該隊員繼續猜，進度保留。</li>
+        <li>猜錯 <strong>✕</strong>：顯示 3 秒，進度清零，該隊員排到<strong>隊尾</strong>。</li>
+        <li>目標：由底行至頂行，走完整條隱藏路線即勝。</li>
+        <li>三隊將各抽一條<strong>不同</strong>的隱藏路線，難度相同。</li>
+      </ul>
+    </section>
+
+    <section class="section host-guide">
+      <details>
+        <summary>主禮賓操作指引（點擊展開）</summary>
+        <ol>
+          <li>以<strong>單一投影</strong>開啟本頁，向全體參與者簡介規則。</li>
+          <li>使用上方<strong>直線示範</strong>互動說明玩法（路線已顯示，方便理解）。</li>
+          <li>示範後進行<strong>三隊公開抽籤</strong>：建議逐隊抽籤以增加儀式感，或按「一次抽完三隊」。</li>
+          <li>宣讀各隊路線編號，並將下方<strong>導師版連結</strong>發給各隊導師。</li>
+          <li>各隊導師在實體地格進行遊戲，使用導師版同步記錄成績。</li>
+        </ol>
+      </details>
+    </section>
+  </div>
+
+  <script>
+    const COLS = 5;
+    const ROWS = 7;
+    const FAIL_DISPLAY_MS = 3000;
+    const COL_LABELS = ["A", "B", "C", "D", "E"];
+    const DEMO_COL = 2; // column C — straight line demo
+
+    /** Straight vertical demo path: C7 → C1 (bottom to top) */
+    const DEMO_PATH = [];
+    for (let row = ROWS - 1; row >= 0; row--) {
+      DEMO_PATH.push({ col: DEMO_COL, row });
+    }
+
+    const MEMBER_COLORS = [
+      "#1a3d6d", "#f15a24", "#0f766e", "#7c3aed",
+      "#0369a1", "#b45309", "#be123c",
+    ];
+    const ALL_MEMBERS = ["A", "B", "C", "D", "E", "F", "G"];
+    const TEAM_COUNT = 3;
+    const ROUTE_POOL_SIZE = 10;
+    const DRAW_ANIMATION_MS = 1400;
+    const DRAW_TICK_MS = 80;
+
+    const FACILITATOR_BASE = "invisible-maze-facilitator.html";
+
+    let pathIndex = -1;
+    let inputLocked = false;
+    let completed = false;
+    let queue = [...ALL_MEMBERS];
+    let failTimerId = null;
+    let playerPosition = null;
+    let failPosition = null;
+    let failMember = null;
+
+    let teamRoutes = [null, null, null];
+    let remainingRoutes = [];
+    let nextTeamToDraw = 0;
+    let isDrawing = false;
+    let drawTimerId = null;
+
+    const gridEl = document.getElementById("grid");
+    const colLabelsEl = document.getElementById("colLabels");
+    const rowLabelsEl = document.getElementById("rowLabels");
+    const statusEl = document.getElementById("status");
+    const queueEl = document.getElementById("queue");
+    const queueNowEl = document.getElementById("queueNow");
+    const resetDemoBtn = document.getElementById("resetDemoBtn");
+    const drawNextBtn = document.getElementById("drawNextBtn");
+    const drawAllBtn = document.getElementById("drawAllBtn");
+    const resetBallotBtn = document.getElementById("resetBallotBtn");
+    const resultsPanel = document.getElementById("resultsPanel");
+    const resultsList = document.getElementById("resultsList");
+    const cellButtons = [];
+
+    function formatCellLabel(col, row) {
+      return `${COL_LABELS[col]}${ROWS - row}`;
+    }
+
+    function memberColor(id) {
+      return MEMBER_COLORS[id.charCodeAt(0) - 65] || MEMBER_COLORS[0];
+    }
+
+    function personSvg(color) {
+      return `<svg class="person" viewBox="0 0 40 40" aria-hidden="true">
+        <circle cx="20" cy="11" r="7" fill="${color}" />
+        <path d="M8 34c0-7.2 5.4-12 12-12s12 4.8 12 12" fill="${color}" />
+      </svg>`;
+    }
+
+    function personSvgOnGrid(color) {
+      return `<svg class="person-on-grid" viewBox="0 0 40 40" aria-hidden="true">
+        <circle cx="20" cy="11" r="7" fill="${color}" />
+        <path d="M8 34c0-7.2 5.4-12 12-12s12 4.8 12 12" fill="${color}" />
+      </svg>`;
+    }
+
+    function playerMarker(memberId, showX = false) {
+      let extra = `<span class="cell-letter">${memberId}</span>`;
+      if (showX) extra += `<span class="cell-icon">✕</span>`;
+      return `${personSvgOnGrid(memberColor(memberId))}${extra}`;
+    }
+
+    function currentMember() { return queue[0]; }
+
+    function setStatus(msg, tone = "") {
+      statusEl.textContent = msg;
+      statusEl.className = "status" + (tone ? ` ${tone}` : "");
+    }
+
+    function cellKey(col, row) { return `${col},${row}`; }
+
+    function getDemoPathKeys() {
+      return new Set(DEMO_PATH.map((p) => cellKey(p.col, p.row)));
+    }
+
+    function cellsAreAdjacent(a, b) {
+      return Math.abs(a.col - b.col) + Math.abs(a.row - b.row) === 1;
+    }
+
+    function getAttemptableCells() {
+      if (pathIndex < 0) {
+        const bottom = [];
+        for (let col = 0; col < COLS; col++) bottom.push({ col, row: ROWS - 1 });
+        return bottom;
+      }
+      const current = DEMO_PATH[pathIndex];
+      const neighbors = [];
+      [[0,-1],[0,1],[-1,0],[1,0]].forEach(([dc, dr]) => {
+        const col = current.col + dc;
+        const row = current.row + dr;
+        if (col >= 0 && col < COLS && row >= 0 && row < ROWS) {
+          neighbors.push({ col, row });
+        }
+      });
+      return neighbors;
+    }
+
+    function isAttemptable(col, row) {
+      return getAttemptableCells().some((c) => c.col === col && c.row === row);
+    }
+
+    function buildGridLabels() {
+      colLabelsEl.innerHTML = COL_LABELS.map((l) => `<span>${l}</span>`).join("");
+      rowLabelsEl.innerHTML = "";
+      for (let r = ROWS; r >= 1; r--) {
+        const span = document.createElement("span");
+        span.textContent = String(r);
+        rowLabelsEl.appendChild(span);
+      }
+    }
+
+    function buildGrid() {
+      gridEl.innerHTML = "";
+      cellButtons.length = 0;
+      for (let row = 0; row < ROWS; row++) {
+        cellButtons[row] = [];
+        for (let col = 0; col < COLS; col++) {
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "cell";
+          btn.setAttribute("aria-label", formatCellLabel(col, row));
+          btn.addEventListener("click", () => handleCellClick(col, row));
+          gridEl.appendChild(btn);
+          cellButtons[row][col] = btn;
+        }
+      }
+    }
+
+    function renderQueue() {
+      queueEl.innerHTML = "";
+      queueNowEl.innerHTML = `現正猜測：<strong>${currentMember()}</strong>`;
+      queue.forEach((id, i) => {
+        const item = document.createElement("div");
+        item.className = "member" + (i === 0 ? " active" : "");
+        item.innerHTML = `${personSvg(memberColor(id))}<span>${id}</span>`;
+        queueEl.appendChild(item);
+      });
+    }
+
+    function setCellContent(btn, html) {
+      btn.innerHTML = html ? `<span class="cell-mark">${html}</span>` : "";
+    }
+
+    function renderBoard() {
+      const pathKeys = getDemoPathKeys();
+      for (let row = 0; row < ROWS; row++) {
+        for (let col = 0; col < COLS; col++) {
+          const btn = cellButtons[row][col];
+          const onPath = pathKeys.has(cellKey(col, row));
+          const progressed = pathIndex >= 0 && DEMO_PATH.slice(0, pathIndex + 1).some(
+            (p) => p.col === col && p.row === row
+          );
+          const isCurrent = playerPosition && playerPosition.col === col && playerPosition.row === row;
+          const isFail = failPosition && failPosition.col === col && failPosition.row === row && btn.classList.contains("fail");
+
+          btn.classList.remove("correct", "path-hint", "has-player");
+          setCellContent(btn, "");
+
+          if (isFail && failMember) {
+            setCellContent(btn, playerMarker(failMember, true));
+          } else if (isCurrent) {
+            btn.classList.add("has-player", "correct");
+            setCellContent(btn, playerMarker(currentMember()));
+          } else if (progressed) {
+            btn.classList.add("correct");
+            setCellContent(btn, playerMarker(currentMember()));
+          } else if (onPath) {
+            btn.classList.add("path-hint");
+          }
+
+          btn.disabled = completed || inputLocked;
+        }
+      }
+    }
+
+    function handleCellClick(col, row) {
+      if (inputLocked || completed || !isAttemptable(col, row)) return;
+
+      const nextIndex = pathIndex + 1;
+      const expected = DEMO_PATH[nextIndex];
+      const isCorrect = expected && expected.col === col && expected.row === row;
+
+      if (isCorrect) {
+        pathIndex = nextIndex;
+        playerPosition = { col, row };
+        renderBoard();
+        if (pathIndex === DEMO_PATH.length - 1) {
+          completed = true;
+          renderBoard();
+          setStatus("示範完成！實際遊戲中路線是隱藏的。", "success");
+        } else {
+          setStatus(`猜對 ✓ — 隊員 ${currentMember()} 繼續沿 C 欄向上猜測。`, "success");
+        }
+        return;
+      }
+
+      failAndReset(col, row);
+    }
+
+    function failAndReset(col, row) {
+      inputLocked = true;
+      const missed = currentMember();
+      setStatus(`隊員 ${missed} 猜錯！顯示 ✕ 3 秒…`, "fail");
+      failPosition = { col, row };
+      failMember = missed;
+      const btn = cellButtons[row][col];
+      btn.classList.add("fail");
+      renderBoard();
+
+      if (failTimerId) window.clearTimeout(failTimerId);
+      failTimerId = window.setTimeout(() => {
+        failTimerId = null;
+        pathIndex = -1;
+        playerPosition = null;
+        completed = false;
+        inputLocked = false;
+        btn.classList.remove("fail");
+        failPosition = null;
+        failMember = null;
+        queue.push(queue.shift());
+        renderQueue();
+        renderBoard();
+        setStatus(`隊員 ${missed} 排到隊尾。隊員 ${currentMember()} 輪到 — 請從底行重新開始。`);
+      }, FAIL_DISPLAY_MS);
+    }
+
+    function resetDemo() {
+      if (failTimerId) { window.clearTimeout(failTimerId); failTimerId = null; }
+      pathIndex = -1;
+      playerPosition = null;
+      failPosition = null;
+      failMember = null;
+      inputLocked = false;
+      completed = false;
+      queue = [...ALL_MEMBERS];
+      renderQueue();
+      renderBoard();
+      setStatus("示範：隊員 A 輪到 — 請沿 C 欄底行（C7）開始猜測。");
+    }
+
+    function shuffleArray(arr) {
+      const a = [...arr];
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    }
+
+    function initBallotPool() {
+      remainingRoutes = shuffleArray(
+        Array.from({ length: ROUTE_POOL_SIZE }, (_, i) => i + 1)
+      );
+    }
+
+    function updateTeamCard(teamIdx, state, routeNum) {
+      const card = document.querySelector(`.team-card[data-team="${teamIdx + 1}"]`);
+      const routeEl = document.getElementById(`teamRoute${teamIdx + 1}`);
+      card.classList.remove("done", "drawing");
+      routeEl.classList.remove("idle", "drawing");
+
+      if (state === "idle") {
+        routeEl.classList.add("idle");
+        routeEl.textContent = "尚未抽籤";
+        return;
+      }
+      if (state === "drawing") {
+        card.classList.add("drawing");
+        routeEl.classList.add("drawing");
+        routeEl.textContent = routeNum;
+        return;
+      }
+      card.classList.add("done");
+      routeEl.textContent = `路線 ${routeNum}`;
+    }
+
+    function facilitatorUrl(team, route) {
+      const base = new URL(FACILITATOR_BASE, window.location.href);
+      base.searchParams.set("team", String(team));
+      base.searchParams.set("route", String(route));
+      return base.href;
+    }
+
+    function renderResults() {
+      const allDone = teamRoutes.every((r) => r !== null);
+      if (!allDone) {
+        resultsPanel.hidden = true;
+        return;
+      }
+      resultsPanel.hidden = false;
+      resultsList.innerHTML = teamRoutes.map((route, i) => {
+        const team = i + 1;
+        const url = facilitatorUrl(team, route);
+        return `<li>第 ${team} 隊 · 路線 ${route} — <a href="${url}" target="_blank" rel="noopener">${url}</a></li>`;
+      }).join("");
+    }
+
+    function updateBallotButtons() {
+      const allDone = teamRoutes.every((r) => r !== null);
+      drawNextBtn.disabled = isDrawing || allDone;
+      drawAllBtn.disabled = isDrawing || allDone;
+      resetBallotBtn.disabled = isDrawing;
+    }
+
+    function stopDrawAnimation() {
+      if (drawTimerId) { window.clearInterval(drawTimerId); drawTimerId = null; }
+      isDrawing = false;
+      updateBallotButtons();
+    }
+
+    function assignRouteToTeam(teamIdx, routeNum) {
+      teamRoutes[teamIdx] = routeNum;
+      updateTeamCard(teamIdx, "done", routeNum);
+      nextTeamToDraw = teamIdx + 1;
+      renderResults();
+      updateBallotButtons();
+    }
+
+    function drawForTeam(teamIdx, onComplete) {
+      if (teamIdx >= TEAM_COUNT || !remainingRoutes.length) return;
+
+      isDrawing = true;
+      updateBallotButtons();
+      updateTeamCard(teamIdx, "drawing", "…");
+
+      const started = Date.now();
+      drawTimerId = window.setInterval(() => {
+        const rolling = remainingRoutes[Math.floor(Math.random() * remainingRoutes.length)];
+        updateTeamCard(teamIdx, "drawing", rolling);
+
+        if (Date.now() - started >= DRAW_ANIMATION_MS) {
+          stopDrawAnimation();
+          const pickIdx = Math.floor(Math.random() * remainingRoutes.length);
+          const finalRoute = remainingRoutes.splice(pickIdx, 1)[0];
+          assignRouteToTeam(teamIdx, finalRoute);
+          if (onComplete) onComplete();
+        }
+      }, DRAW_TICK_MS);
+    }
+
+    function drawNextTeam() {
+      if (isDrawing || nextTeamToDraw >= TEAM_COUNT) return;
+      drawForTeam(nextTeamToDraw);
+    }
+
+    function drawAllTeams() {
+      if (isDrawing) return;
+
+      function drawSequential(idx) {
+        if (idx >= TEAM_COUNT) return;
+        drawForTeam(idx, () => drawSequential(idx + 1));
+      }
+      drawSequential(nextTeamToDraw);
+    }
+
+    function resetBallot() {
+      stopDrawAnimation();
+      teamRoutes = [null, null, null];
+      nextTeamToDraw = 0;
+      initBallotPool();
+      for (let i = 0; i < TEAM_COUNT; i++) updateTeamCard(i, "idle");
+      resultsPanel.hidden = true;
+      resultsList.innerHTML = "";
+      updateBallotButtons();
+    }
+
+    buildGridLabels();
+    buildGrid();
+    renderQueue();
+    renderBoard();
+    initBallotPool();
+    updateBallotButtons();
+
+    resetDemoBtn.addEventListener("click", resetDemo);
+    drawNextBtn.addEventListener("click", drawNextTeam);
+    drawAllBtn.addEventListener("click", drawAllTeams);
+    resetBallotBtn.addEventListener("click", resetBallot);
+  </script>
+</body>
+</html>
