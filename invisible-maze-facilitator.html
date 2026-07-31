@@ -138,23 +138,21 @@
       font-weight: 500;
     }
 
-    /* ---------- Compact top queue ---------- */
-    .queue-bar {
+    /* ---------- Single-file queue line (below grid) ---------- */
+    .queue-line-wrap {
       background: var(--surface);
       border-radius: calc(var(--radius) + 2px);
-      padding: 0.55rem 0.85rem;
+      padding: 0.75rem 0.9rem 0.85rem;
       box-shadow: var(--shadow);
-      display: flex;
-      align-items: center;
-      gap: 0.65rem;
-      flex-wrap: wrap;
     }
 
-    .queue-bar-head {
+    .queue-line-head {
       display: flex;
+      flex-wrap: wrap;
       align-items: baseline;
-      gap: 0.45rem;
-      flex-shrink: 0;
+      justify-content: space-between;
+      gap: 0.35rem 0.75rem;
+      margin-bottom: 0.55rem;
     }
 
     .queue-title {
@@ -177,23 +175,64 @@
       font-size: 0.9rem;
     }
 
+    .queue-line-track {
+      position: relative;
+      padding: 0.35rem 0.25rem 0.55rem;
+    }
+
+    .queue-line-rail {
+      position: absolute;
+      left: 0.25rem;
+      right: 0.25rem;
+      bottom: 0.2rem;
+      height: 3px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--brand-orange), #fbbf24 40%, #94a3b8);
+      box-shadow: 0 1px 0 rgba(255, 255, 255, 0.7);
+    }
+
+    .queue-line-rail::before {
+      content: "起";
+      position: absolute;
+      left: 0;
+      top: -1.15rem;
+      font-size: 0.62rem;
+      font-weight: 800;
+      color: var(--brand-orange);
+    }
+
+    .queue-line-rail::after {
+      content: "尾";
+      position: absolute;
+      right: 0;
+      top: -1.15rem;
+      font-size: 0.62rem;
+      font-weight: 800;
+      color: #64748b;
+    }
+
     .queue {
       display: flex;
-      flex-wrap: wrap;
-      gap: 0.35rem;
-      flex: 1;
-      justify-content: flex-end;
+      flex-wrap: nowrap;
+      gap: 0.28rem;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      padding-bottom: 0.55rem;
+      position: relative;
+      z-index: 1;
+      scrollbar-width: thin;
     }
 
     .member {
       display: flex;
       align-items: center;
-      gap: 0.25rem;
-      padding: 0.2rem 0.45rem 0.2rem 0.3rem;
+      gap: 0.2rem;
+      padding: 0.2rem 0.4rem 0.2rem 0.28rem;
       border-radius: 999px;
       background: #f3f7fb;
       border: 1.5px solid transparent;
       transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+      flex-shrink: 0;
     }
 
     .member.active {
@@ -203,14 +242,14 @@
     }
 
     .person {
-      width: 22px;
-      height: 22px;
+      width: 20px;
+      height: 20px;
       display: block;
       flex-shrink: 0;
     }
 
     .member-id {
-      font-size: 0.82rem;
+      font-size: 0.78rem;
       font-weight: 700;
       color: var(--ink);
       line-height: 1;
@@ -222,10 +261,10 @@
 
     .member-tag {
       display: none;
-      font-size: 0.62rem;
+      font-size: 0.58rem;
       font-weight: 600;
       color: var(--brand-orange);
-      margin-left: 0.1rem;
+      margin-left: 0.05rem;
     }
 
     .member.active .member-tag {
@@ -767,7 +806,7 @@
 
     .scoreboard-grid {
       display: grid;
-      grid-template-columns: repeat(7, minmax(0, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(4.5rem, 1fr));
       gap: 0.45rem;
     }
 
@@ -936,17 +975,12 @@
         justify-content: center;
       }
 
-      .queue-bar {
-        flex-direction: column;
-        align-items: stretch;
-      }
-
-      .queue {
-        justify-content: center;
+      .queue-line-wrap {
+        padding: 0.65rem 0.7rem 0.75rem;
       }
 
       .scoreboard-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(4.2rem, 1fr));
       }
     }
   </style>
@@ -974,7 +1008,7 @@
             <strong>活動式領導訓練</strong>
           </div>
           <div class="meta-item" id="teamMeta" hidden>
-            <span class="meta-label">隊伍：</span>
+            <span class="meta-label">組別：</span>
             <strong id="teamMetaValue"></strong>
           </div>
           <div class="meta-item">
@@ -984,14 +1018,6 @@
         </div>
       </div>
     </header>
-
-    <div class="queue-bar" aria-label="隊伍輪候">
-      <div class="queue-bar-head">
-        <span class="queue-title">隊伍輪候</span>
-        <span id="queueNow" class="queue-now">現正猜測：<strong>A</strong></span>
-      </div>
-      <div id="queue" class="queue" role="list"></div>
-    </div>
 
     <div class="board-wrap">
       <p id="status" class="status" aria-live="polite">隊員 A 輪到 — 請選底行任意一格。</p>
@@ -1005,6 +1031,17 @@
       </div>
     </div>
 
+    <section class="queue-line-wrap" aria-label="單行輪候排隊線">
+      <div class="queue-line-head">
+        <span class="queue-title">單行輪候（11 人）</span>
+        <span id="queueNow" class="queue-now">現正猜測：<strong>A</strong></span>
+      </div>
+      <div class="queue-line-track">
+        <div class="queue-line-rail" aria-hidden="true"></div>
+        <div id="queue" class="queue" role="list"></div>
+      </div>
+    </section>
+
     <section class="scoreboard" aria-label="成績紀錄">
       <div class="scoreboard-title">成績紀錄</div>
       <p class="scoreboard-hint">參與 = 每次輪到你上場；猜測 = 該次參與內的每次選格</p>
@@ -1013,8 +1050,8 @@
 
     <div class="controls">
       <div class="route-picker">
-        <label for="routeSelect">本隊路線</label>
-        <select id="routeSelect" aria-label="選擇本隊已抽籤之路線"></select>
+        <label for="routeSelect">本組路線</label>
+        <select id="routeSelect" aria-label="選擇本組已抽籤之路線"></select>
       </div>
       <button type="button" id="togglePathBtn" class="btn btn-primary admin-hidden" hidden>顯示／隱藏路線</button>
       <button type="button" id="resetBtn" class="btn btn-secondary">重新開始</button>
@@ -1027,12 +1064,12 @@
       <div class="rules-title">遊戲規則</div>
       <ul class="rules-list">
         <li>格子以<strong>欄 A–E</strong>（左至右）、<strong>行 1–7</strong>（底至頂）標示。</li>
-        <li>7 位隊員（<strong>A–G</strong>）按順序輪流猜測。</li>
+        <li>每組 <strong>11</strong> 位隊員（<strong>A–K</strong>）<strong>單行輪候</strong>，只有最前方者負責猜測。</li>
         <li>第一步：可選<strong>底行任意一格</strong>（選錯入口也算失敗）。</li>
         <li>之後：只能選與現位置<strong>上下左右相鄰</strong>的格子。</li>
         <li>猜對 <strong>✓</strong>：該隊員繼續猜，進度保留。</li>
         <li>猜錯 <strong>✕</strong>：顯示 3 秒，進度清零，該隊員排到<strong>隊尾</strong>。</li>
-        <li>目標：由底行至頂行，走完整條隱藏路線即勝。</li>
+        <li>目標：由底行至頂行，走完整條隱藏路線；全組均需通關。</li>
       </ul>
     </section>
 
@@ -1041,23 +1078,23 @@
       <div class="guide-body">
         <h3>一、使用前準備</h3>
         <ol>
-          <li>主禮賓已在<strong>簡報版</strong>為三隊公開抽籤；請向主禮賓確認<strong>本隊路線編號</strong>。</li>
-          <li>開啟本頁後，於「本隊路線」選擇對應編號；或使用網址參數 <code>?team=1&amp;route=7</code>（隊伍及路線）。</li>
+          <li>活動主持已在<strong>簡報版</strong>為兩組公開抽籤；請向活動主持確認<strong>本組路線編號</strong>。</li>
+          <li>開啟本頁後，於「本組路線」選擇對應編號；或使用網址參數 <code>?team=1&amp;route=7</code>（組別及路線）。</li>
           <li>以<strong>單一螢幕</strong>由導師操作；隊員在實體地格上進行，活動期間不宜各自用手機開啟此頁。</li>
-          <li>確認實體地格與螢幕一致：欄 <strong>A–E</strong>（左至右）、行 <strong>1–7</strong>（底至頂）。</li>
+          <li>確認實體地格與螢幕一致：欄 <strong>A–E</strong>（左至右）、行 <strong>1–7</strong>（底至頂）；11 人<strong>單行排隊</strong>。</li>
         </ol>
 
-        <h3>二、每隊開始流程</h3>
+        <h3>二、每組開始流程</h3>
         <ol>
-          <li>設定<strong>本隊路線</strong>（與主禮賓抽籤結果一致）。</li>
+          <li>設定<strong>本組路線</strong>（與活動主持抽籤結果一致）。</li>
           <li>按<strong>重新開始</strong>，清空隊伍輪候與成績紀錄。</li>
           <li>簡述規則後，隊員在實體地格上站位；導師在螢幕上<strong>同步點選</strong>相同格子。</li>
         </ol>
 
         <h3>三、進行中操作</h3>
         <ul>
-          <li><strong>隊伍輪候</strong>：只有最前方隊員（A–G）負責猜測；猜對可繼續，猜錯則排到隊尾。</li>
-          <li><strong>格子標記</strong>：點選後顯示該隊員顏色小人及代號；正確為綠格，錯誤顯示 ✕ 3 秒後全隊回到起點。</li>
+          <li><strong>單行輪候</strong>：只有最前方隊員（A–K）負責猜測；猜對可繼續，猜錯則排到隊尾。</li>
+          <li><strong>格子標記</strong>：點選後顯示該隊員顏色小人及代號；正確為綠格，錯誤顯示 ✕ 3 秒後全組回到起點。</li>
           <li><strong>成績紀錄</strong>：自動記錄每次<strong>參與</strong>及當中的每次<strong>猜測</strong>（✓／✕ 及格子編號）。</li>
           <li>導師專用：連續點擊頁面<strong>右下角 5 次</strong>，可顯示「顯示／隱藏路線」（建議留待檢討或示範後使用）。</li>
         </ul>
@@ -1071,8 +1108,8 @@
         </ol>
 
         <p class="guide-note">
-          三隊路線由主禮賓在簡報版抽籤分配，確保各隊路線不同且難度相同。
-          本頁僅供該隊導師依已抽籤結果操作及記錄成績。
+          兩組路線由活動主持在簡報版抽籤分配；10 條路線依格子選錯機率平衡難度，確保各組公平。
+          本頁僅供該組導師依已抽籤結果操作及記錄成績。
         </p>
       </div>
     </details>
@@ -1089,64 +1126,67 @@
     const FAIL_DISPLAY_MS = 3000;
 
     const ROUTES = [
-      [
-        { col: 1, row: 6 }, { col: 1, row: 5 }, { col: 0, row: 5 }, { col: 0, row: 4 },
-        { col: 0, row: 3 }, { col: 1, row: 3 }, { col: 2, row: 3 }, { col: 3, row: 3 },
-        { col: 3, row: 2 }, { col: 3, row: 1 }, { col: 4, row: 1 }, { col: 4, row: 0 },
+      // All routes: 12 cells, equal probability difficulty (deg-sum of first 11 cells = 41)
+      // Entrance always 1/5; step difficulty by cell branching: corners 1/2, edges 1/3, middle 1/4
+      [ // 1: B1→B2→B3→C3→D3→D4→D5→E5→E6→D6→D7→E7
+        { col: 1, row: 6 }, { col: 1, row: 5 }, { col: 1, row: 4 }, { col: 2, row: 4 },
+        { col: 3, row: 4 }, { col: 3, row: 3 }, { col: 3, row: 2 }, { col: 4, row: 2 },
+        { col: 4, row: 1 }, { col: 3, row: 1 }, { col: 3, row: 0 }, { col: 4, row: 0 },
       ],
-      [
-        { col: 3, row: 6 }, { col: 3, row: 5 }, { col: 4, row: 5 }, { col: 4, row: 4 },
-        { col: 4, row: 3 }, { col: 3, row: 3 }, { col: 2, row: 3 }, { col: 1, row: 3 },
-        { col: 1, row: 2 }, { col: 1, row: 1 }, { col: 0, row: 1 }, { col: 0, row: 0 },
-      ],
-      [
+      [ // 2: C1→C2→C3→B3→A3→A4→B4→B5→B6→C6→C7→D7
         { col: 2, row: 6 }, { col: 2, row: 5 }, { col: 2, row: 4 }, { col: 1, row: 4 },
-        { col: 0, row: 4 }, { col: 0, row: 3 }, { col: 0, row: 2 }, { col: 1, row: 2 },
+        { col: 0, row: 4 }, { col: 0, row: 3 }, { col: 1, row: 3 }, { col: 1, row: 2 },
+        { col: 1, row: 1 }, { col: 2, row: 1 }, { col: 2, row: 0 }, { col: 3, row: 0 },
+      ],
+      [ // 3: B1→B2→C2→C3→C4→C5→D5→E5→E6→D6→D7→C7
+        { col: 1, row: 6 }, { col: 1, row: 5 }, { col: 2, row: 5 }, { col: 2, row: 4 },
+        { col: 2, row: 3 }, { col: 2, row: 2 }, { col: 3, row: 2 }, { col: 4, row: 2 },
+        { col: 4, row: 1 }, { col: 3, row: 1 }, { col: 3, row: 0 }, { col: 2, row: 0 },
+      ],
+      [ // 4: C1→C2→C3→B3→A3→A4→B4→B5→C5→C6→C7→B7
+        { col: 2, row: 6 }, { col: 2, row: 5 }, { col: 2, row: 4 }, { col: 1, row: 4 },
+        { col: 0, row: 4 }, { col: 0, row: 3 }, { col: 1, row: 3 }, { col: 1, row: 2 },
+        { col: 2, row: 2 }, { col: 2, row: 1 }, { col: 2, row: 0 }, { col: 1, row: 0 },
+      ],
+      [ // 5: E1→D1→D2→C2→C3→B3→B4→B5→C5→D5→D6→D7
+        { col: 4, row: 6 }, { col: 3, row: 6 }, { col: 3, row: 5 }, { col: 2, row: 5 },
+        { col: 2, row: 4 }, { col: 1, row: 4 }, { col: 1, row: 3 }, { col: 1, row: 2 },
         { col: 2, row: 2 }, { col: 3, row: 2 }, { col: 3, row: 1 }, { col: 3, row: 0 },
       ],
-      [
+      [ // 6: D1→D2→D3→D4→E4→E5→D5→D6→C6→C7→B7→A7
+        { col: 3, row: 6 }, { col: 3, row: 5 }, { col: 3, row: 4 }, { col: 3, row: 3 },
+        { col: 4, row: 3 }, { col: 4, row: 2 }, { col: 3, row: 2 }, { col: 3, row: 1 },
+        { col: 2, row: 1 }, { col: 2, row: 0 }, { col: 1, row: 0 }, { col: 0, row: 0 },
+      ],
+      [ // 7: D1→D2→E2→E3→D3→D4→C4→B4→B5→C5→C6→C7
+        { col: 3, row: 6 }, { col: 3, row: 5 }, { col: 4, row: 5 }, { col: 4, row: 4 },
+        { col: 3, row: 4 }, { col: 3, row: 3 }, { col: 2, row: 3 }, { col: 1, row: 3 },
+        { col: 1, row: 2 }, { col: 2, row: 2 }, { col: 2, row: 1 }, { col: 2, row: 0 },
+      ],
+      [ // 8: D1→D2→E2→E3→D3→D4→C4→B4→B5→B6→B7→A7
+        { col: 3, row: 6 }, { col: 3, row: 5 }, { col: 4, row: 5 }, { col: 4, row: 4 },
+        { col: 3, row: 4 }, { col: 3, row: 3 }, { col: 2, row: 3 }, { col: 1, row: 3 },
+        { col: 1, row: 2 }, { col: 1, row: 1 }, { col: 1, row: 0 }, { col: 0, row: 0 },
+      ],
+      [ // 9: A1→A2→B2→C2→C3→B3→B4→B5→B6→C6→D6→D7
         { col: 0, row: 6 }, { col: 0, row: 5 }, { col: 1, row: 5 }, { col: 2, row: 5 },
-        { col: 2, row: 4 }, { col: 2, row: 3 }, { col: 2, row: 2 }, { col: 1, row: 2 },
-        { col: 1, row: 1 }, { col: 1, row: 0 }, { col: 2, row: 0 }, { col: 3, row: 0 },
-      ],
-      [
-        { col: 4, row: 6 }, { col: 4, row: 5 }, { col: 3, row: 5 }, { col: 2, row: 5 },
-        { col: 2, row: 4 }, { col: 2, row: 3 }, { col: 2, row: 2 }, { col: 3, row: 2 },
-        { col: 3, row: 1 }, { col: 3, row: 0 }, { col: 2, row: 0 }, { col: 1, row: 0 },
-      ],
-      [
-        { col: 1, row: 6 }, { col: 0, row: 6 }, { col: 0, row: 5 }, { col: 0, row: 4 },
-        { col: 1, row: 4 }, { col: 2, row: 4 }, { col: 3, row: 4 }, { col: 3, row: 3 },
-        { col: 3, row: 2 }, { col: 4, row: 2 }, { col: 4, row: 1 }, { col: 4, row: 0 },
-      ],
-      [
-        { col: 3, row: 6 }, { col: 4, row: 6 }, { col: 4, row: 5 }, { col: 4, row: 4 },
-        { col: 3, row: 4 }, { col: 2, row: 4 }, { col: 1, row: 4 }, { col: 1, row: 3 },
-        { col: 1, row: 2 }, { col: 0, row: 2 }, { col: 0, row: 1 }, { col: 0, row: 0 },
-      ],
-      [
-        { col: 2, row: 6 }, { col: 1, row: 6 }, { col: 1, row: 5 }, { col: 1, row: 4 },
-        { col: 1, row: 3 }, { col: 0, row: 3 }, { col: 0, row: 2 }, { col: 0, row: 1 },
+        { col: 2, row: 4 }, { col: 1, row: 4 }, { col: 1, row: 3 }, { col: 1, row: 2 },
         { col: 1, row: 1 }, { col: 2, row: 1 }, { col: 3, row: 1 }, { col: 3, row: 0 },
       ],
-      [
-        { col: 0, row: 6 }, { col: 1, row: 6 }, { col: 1, row: 5 }, { col: 2, row: 5 },
-        { col: 3, row: 5 }, { col: 3, row: 4 }, { col: 3, row: 3 }, { col: 4, row: 3 },
-        { col: 4, row: 2 }, { col: 4, row: 1 }, { col: 3, row: 1 }, { col: 3, row: 0 },
-      ],
-      [
-        { col: 4, row: 6 }, { col: 3, row: 6 }, { col: 3, row: 5 }, { col: 2, row: 5 },
-        { col: 1, row: 5 }, { col: 1, row: 4 }, { col: 1, row: 3 }, { col: 1, row: 2 },
-        { col: 2, row: 2 }, { col: 2, row: 1 }, { col: 2, row: 0 }, { col: 1, row: 0 },
+      [ // 10: E1→E2→D2→D3→C3→C4→C5→C6→B6→B7→C7→D7
+        { col: 4, row: 6 }, { col: 4, row: 5 }, { col: 3, row: 5 }, { col: 3, row: 4 },
+        { col: 2, row: 4 }, { col: 2, row: 3 }, { col: 2, row: 2 }, { col: 2, row: 1 },
+        { col: 1, row: 1 }, { col: 1, row: 0 }, { col: 2, row: 0 }, { col: 3, row: 0 },
       ],
     ];
 
     const MEMBER_COLORS = [
       "#1a3d6d", "#f15a24", "#0f766e", "#7c3aed",
-      "#0369a1", "#b45309", "#be123c",
+      "#0369a1", "#b45309", "#be123c", "#15803d",
+      "#a21caf", "#0e7490", "#c2410c",
     ];
 
-    const ALL_MEMBERS = ["A", "B", "C", "D", "E", "F", "G"];
+    const ALL_MEMBERS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K"];
 
     /** Grid column letters (A = left) */
     const COL_LABELS = ["A", "B", "C", "D", "E"];
@@ -1156,7 +1196,7 @@
     let pathVisible = false;
     let inputLocked = false;
     let completed = false;
-    let queue = ["A", "B", "C", "D", "E", "F", "G"];
+    let queue = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K"];
     let failTimerId = null;
 
     /** Current player standing position on the grid; null = off the board */
@@ -1331,7 +1371,7 @@
 
     function defaultPrompt() {
       if (!routeReady) {
-        return "請先選擇本隊路線（與主禮賓抽籤結果一致）。";
+        return "請先選擇本組路線（與活動主持抽籤結果一致）。";
       }
       return `路線 ${routeIndex + 1} · 隊員 ${currentMember()} 輪到 — 請選底行任意一格。`;
     }
@@ -1341,9 +1381,9 @@
     }
 
     function setTeamMeta(team) {
-      if (team >= 1 && team <= 3) {
+      if (team >= 1 && team <= 2) {
         teamNumber = team;
-        teamMetaValueEl.textContent = `第 ${team} 隊`;
+        teamMetaValueEl.textContent = `第 ${team} 組`;
         teamMetaEl.hidden = false;
       }
     }
@@ -1707,7 +1747,7 @@
       renderBoard();
       renderScoreboard();
 
-      const teamNote = teamNumber ? `第 ${teamNumber} 隊 · ` : "";
+      const teamNote = teamNumber ? `第 ${teamNumber} 組 · ` : "";
       if (options.fromUrl) {
         setStatus(`${teamNote}已載入路線 ${routeIndex + 1}。${defaultPrompt()}`);
       } else {
@@ -1726,7 +1766,7 @@
       completed = false;
       inputLocked = false;
       pathVisible = false;
-      queue = ["A", "B", "C", "D", "E", "F", "G"];
+      queue = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K"];
       resetMemberTracking();
 
       clearFailMarkers();

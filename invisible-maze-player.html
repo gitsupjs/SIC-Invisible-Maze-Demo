@@ -220,23 +220,21 @@
       border-top: 1px solid var(--line);
     }
 
-    /* ---------- Compact top queue ---------- */
-    .queue-bar {
+    /* ---------- Single-file queue line (below grid) ---------- */
+    .queue-line-wrap {
       background: var(--surface);
       border-radius: calc(var(--radius) + 2px);
-      padding: 0.55rem 0.85rem;
+      padding: 0.75rem 0.9rem 0.85rem;
       box-shadow: var(--shadow);
-      display: flex;
-      align-items: center;
-      gap: 0.65rem;
-      flex-wrap: wrap;
     }
 
-    .queue-bar-head {
+    .queue-line-head {
       display: flex;
+      flex-wrap: wrap;
       align-items: baseline;
-      gap: 0.45rem;
-      flex-shrink: 0;
+      justify-content: space-between;
+      gap: 0.35rem 0.75rem;
+      margin-bottom: 0.55rem;
     }
 
     .queue-title {
@@ -259,23 +257,64 @@
       font-size: 0.9rem;
     }
 
+    .queue-line-track {
+      position: relative;
+      padding: 0.35rem 0.25rem 0.55rem;
+    }
+
+    .queue-line-rail {
+      position: absolute;
+      left: 0.25rem;
+      right: 0.25rem;
+      bottom: 0.2rem;
+      height: 3px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--brand-orange), #fbbf24 40%, #94a3b8);
+      box-shadow: 0 1px 0 rgba(255, 255, 255, 0.7);
+    }
+
+    .queue-line-rail::before {
+      content: "起";
+      position: absolute;
+      left: 0;
+      top: -1.15rem;
+      font-size: 0.62rem;
+      font-weight: 800;
+      color: var(--brand-orange);
+    }
+
+    .queue-line-rail::after {
+      content: "尾";
+      position: absolute;
+      right: 0;
+      top: -1.15rem;
+      font-size: 0.62rem;
+      font-weight: 800;
+      color: #64748b;
+    }
+
     .queue {
       display: flex;
-      flex-wrap: wrap;
-      gap: 0.35rem;
-      flex: 1;
-      justify-content: flex-end;
+      flex-wrap: nowrap;
+      gap: 0.28rem;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      padding-bottom: 0.55rem;
+      position: relative;
+      z-index: 1;
+      scrollbar-width: thin;
     }
 
     .member {
       display: flex;
       align-items: center;
-      gap: 0.25rem;
-      padding: 0.2rem 0.45rem 0.2rem 0.3rem;
+      gap: 0.2rem;
+      padding: 0.2rem 0.4rem 0.2rem 0.28rem;
       border-radius: 999px;
       background: #f3f7fb;
       border: 1.5px solid transparent;
       transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+      flex-shrink: 0;
     }
 
     .member.active {
@@ -285,14 +324,14 @@
     }
 
     .person {
-      width: 22px;
-      height: 22px;
+      width: 20px;
+      height: 20px;
       display: block;
       flex-shrink: 0;
     }
 
     .member-id {
-      font-size: 0.82rem;
+      font-size: 0.78rem;
       font-weight: 700;
       color: var(--ink);
       line-height: 1;
@@ -304,10 +343,10 @@
 
     .member-tag {
       display: none;
-      font-size: 0.62rem;
+      font-size: 0.58rem;
       font-weight: 600;
       color: var(--brand-orange);
-      margin-left: 0.1rem;
+      margin-left: 0.05rem;
     }
 
     .member.active .member-tag {
@@ -1018,17 +1057,8 @@
         justify-content: center;
       }
 
-      .queue-bar {
-        flex-direction: column;
-        align-items: stretch;
-      }
-
-      .queue {
-        justify-content: center;
-      }
-
-      .scoreboard-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+      .queue-line-wrap {
+        padding: 0.65rem 0.7rem 0.75rem;
       }
     }
   </style>
@@ -1065,26 +1095,18 @@
 
     <section class="planning-panel" aria-label="賽前策略討論">
       <div class="planning-badge">賽前練習 · 路線隱藏 · 正式比賽前討論用</div>
-      <div class="planning-title">小隊策略討論</div>
+      <div class="planning-title">小組策略討論</div>
       <p class="planning-hint">
-        先一起試玩本頁，感受規則壓力；正式比賽路線更長、每隊不同。
+        先一起試玩本頁，感受規則壓力；正式比賽為兩組對陣、每組 11 人單行輪候，路線更長且兩組不同。
         以下只給思考方向——具體做法由你們自己訂。
       </p>
       <ul class="planning-questions">
-        <li>一個人踩錯離場後，隊上還剩下什麼「有用資訊」？</li>
+        <li>一個人踩錯離場後，組上還剩下什麼「有用資訊」？</li>
         <li>不能說話時，你們打算用什麼方式交接？</li>
-        <li>個人試錯怎樣才不會白費，而能變成全隊共有的東西？</li>
+        <li>個人試錯怎樣才不會白費，而能變成全組共有的東西？</li>
         <li>時間有限時，你們願意在「探索」與「推進」之間如何取捨？</li>
       </ul>
     </section>
-
-    <div class="queue-bar" aria-label="隊伍輪候">
-      <div class="queue-bar-head">
-        <span class="queue-title">隊伍輪候</span>
-        <span id="queueNow" class="queue-now">現正猜測：<strong>A</strong></span>
-      </div>
-      <div id="queue" class="queue" role="list"></div>
-    </div>
 
     <div class="board-wrap">
       <p id="status" class="status" aria-live="polite">隊員 A 輪到 — 請選底行任意一格。</p>
@@ -1097,6 +1119,17 @@
         </div>
       </div>
     </div>
+
+    <section class="queue-line-wrap" aria-label="單行輪候排隊線">
+      <div class="queue-line-head">
+        <span class="queue-title">單行輪候（11 人）</span>
+        <span id="queueNow" class="queue-now">現正猜測：<strong>A</strong></span>
+      </div>
+      <div class="queue-line-track">
+        <div class="queue-line-rail" aria-hidden="true"></div>
+        <div id="queue" class="queue" role="list"></div>
+      </div>
+    </section>
 
     <div class="controls">
       <button type="button" id="resetBtn" class="btn btn-secondary">重新開始</button>
@@ -1114,7 +1147,7 @@
 
       <div class="rules-subtitle">進場與移動</div>
       <ul class="rules-list">
-        <li>每次派 <strong>1 人</strong> 由起點入陣。</li>
+        <li>兩組各 <strong>11</strong> 人，必須<strong>單行排隊</strong>；每次派 <strong>1 人</strong> 由起點入陣。</li>
         <li>踩中安全格可繼續向前、向左或向右移動一格（<strong>嚴禁斜行</strong>）。</li>
         <li>踩中地雷格時，裁判將吹響哨子，該名學員需即時退回隊尾，下一位隊友即時補上繼續嘗試。</li>
         <li>格子標示：欄 <strong>A–E</strong>（左至右）、行 <strong>1–7</strong>（底至頂）；本頁練習可先熟悉操作。</li>
@@ -1128,11 +1161,11 @@
 
       <div class="rules-subtitle">通關條件</div>
       <ul class="rules-list">
-        <li>在 <strong>25 分鐘</strong> 的正式遊戲時間內，全隊必須全部順利由起點穿越雷區抵達終點。</li>
+        <li>在 <strong>25 分鐘</strong> 的正式遊戲時間內，全組必須全部順利由起點穿越雷區抵達終點。</li>
       </ul>
 
       <p class="rules-note">
-        本頁為賽前練習：路線隱藏，僅供小隊熟悉規則與討論策略；正式比賽路線更長，且各隊不同。
+        本頁為賽前練習：路線隱藏，僅供小組熟悉規則與討論策略；正式比賽為兩組、路線更長且兩組不同。
       </p>
     </section>
   </div>
@@ -1162,10 +1195,11 @@
 
     const MEMBER_COLORS = [
       "#1a3d6d", "#f15a24", "#0f766e", "#7c3aed",
-      "#0369a1", "#b45309", "#be123c",
+      "#0369a1", "#b45309", "#be123c", "#15803d",
+      "#a21caf", "#0e7490", "#c2410c",
     ];
 
-    const ALL_MEMBERS = ["A", "B", "C", "D", "E", "F", "G"];
+    const ALL_MEMBERS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K"];
 
     /** Grid column letters (A = left) */
     const COL_LABELS = ["A", "B", "C", "D", "E"];
@@ -1173,7 +1207,7 @@
     let pathIndex = -1;
     let inputLocked = false;
     let completed = false;
-    let queue = ["A", "B", "C", "D", "E", "F", "G"];
+    let queue = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K"];
     let failTimerId = null;
 
     /** Current player standing position on the grid; null = off the board */
@@ -1508,7 +1542,7 @@
       clearRunProgress();
       completed = false;
       inputLocked = false;
-      queue = ["A", "B", "C", "D", "E", "F", "G"];
+      queue = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K"];
 
       clearFailMarkers();
       renderQueue();

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>隱形迷宮 — 主禮賓簡報版</title>
+  <title>隱形迷宮 — 活動主持簡報版</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&family=Outfit:wght@400;600;700&display=swap" rel="stylesheet" />
@@ -130,15 +130,21 @@
       margin-bottom: 0.5rem;
     }
 
-    .queue-bar {
+    .queue-line-wrap {
+      margin-top: 0.65rem;
+      background: #f8fbff;
+      border-radius: 12px;
+      padding: 0.65rem 0.75rem 0.75rem;
+      border: 1px solid var(--line);
+    }
+
+    .queue-line-head {
       display: flex;
       flex-wrap: wrap;
-      align-items: center;
-      gap: 0.5rem 0.75rem;
-      background: var(--surface);
-      border-radius: var(--radius);
-      padding: 0.55rem 0.75rem;
-      box-shadow: var(--shadow);
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 0.35rem 0.75rem;
+      margin-bottom: 0.45rem;
     }
 
     .queue-title {
@@ -147,22 +153,62 @@
       color: var(--brand-blue);
     }
 
+    .queue-line-track {
+      position: relative;
+      padding: 0.3rem 0.2rem 0.5rem;
+    }
+
+    .queue-line-rail {
+      position: absolute;
+      left: 0.2rem;
+      right: 0.2rem;
+      bottom: 0.15rem;
+      height: 3px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--brand-orange), #fbbf24 40%, #94a3b8);
+    }
+
+    .queue-line-rail::before {
+      content: "起";
+      position: absolute;
+      left: 0;
+      top: -1.05rem;
+      font-size: 0.6rem;
+      font-weight: 800;
+      color: var(--brand-orange);
+    }
+
+    .queue-line-rail::after {
+      content: "尾";
+      position: absolute;
+      right: 0;
+      top: -1.05rem;
+      font-size: 0.6rem;
+      font-weight: 800;
+      color: #64748b;
+    }
+
     .queue {
       display: flex;
-      flex-wrap: wrap;
-      gap: 0.35rem;
+      flex-wrap: nowrap;
+      gap: 0.28rem;
+      overflow-x: auto;
+      padding-bottom: 0.5rem;
+      position: relative;
+      z-index: 1;
     }
 
     .member {
       display: flex;
       align-items: center;
       gap: 0.2rem;
-      padding: 0.2rem 0.45rem;
+      padding: 0.2rem 0.4rem;
       border-radius: 999px;
       background: #eef4fa;
       font-size: 0.72rem;
       font-weight: 700;
       color: var(--muted);
+      flex-shrink: 0;
     }
 
     .member.active {
@@ -414,7 +460,7 @@
     /* ---------- 3-team ballot ---------- */
     .ballot-grid {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 0.65rem;
       margin-bottom: 0.75rem;
     }
@@ -565,7 +611,7 @@
         <div class="meta">
           <div><span>課程：</span><strong>SIC 2/2026</strong></div>
           <div><span>環節：</span><strong>活動式領導訓練</strong></div>
-          <div><span>模式：</span><strong>主禮賓簡報版</strong></div>
+          <div><span>模式：</span><strong>活動主持簡報版</strong></div>
         </div>
       </div>
     </header>
@@ -574,17 +620,11 @@
       <div class="demo-badge">隱藏路線 · 互動示範</div>
       <div class="section-title">規則示範</div>
       <p class="section-hint">
-        路線對參與者<strong>完全隱藏</strong>。主禮賓依真實規則操作：第一步只能選<strong>底行</strong>，
-        之後只能選<strong>相鄰格</strong>；點錯可示範 ✕ 失敗重置及隊伍輪換。
+        路線對參與者<strong>完全隱藏</strong>。活動主持依真實規則操作：第一步只能選<strong>底行</strong>，
+        之後只能選<strong>相鄰格</strong>；點錯可示範 ✕ 失敗重置及單行輪換。
       </p>
 
-      <div class="queue-bar">
-        <span class="queue-title">隊伍輪候</span>
-        <span id="queueNow">現正猜測：<strong>A</strong></span>
-        <div id="queue" class="queue" role="list"></div>
-      </div>
-
-      <div class="board-wrap" style="margin-top:0.65rem">
+      <div class="board-wrap" style="margin-top:0.35rem">
         <p id="status" class="status">示範：隊員 A 輪到 — 請選底行任意一格。</p>
         <div class="board-grid-area">
           <div class="grid-corner" aria-hidden="true"></div>
@@ -596,41 +636,48 @@
         </div>
       </div>
 
+      <section class="queue-line-wrap" aria-label="單行輪候排隊線">
+        <div class="queue-line-head">
+          <span class="queue-title">單行輪候（11 人）</span>
+          <span id="queueNow">現正猜測：<strong>A</strong></span>
+        </div>
+        <div class="queue-line-track">
+          <div class="queue-line-rail" aria-hidden="true"></div>
+          <div id="queue" class="queue" role="list"></div>
+        </div>
+      </section>
+
       <div class="controls" style="margin-top:0.65rem">
         <button type="button" id="resetDemoBtn" class="btn btn-secondary">重設示範</button>
       </div>
     </section>
 
-    <section class="section" aria-label="三隊公開抽籤">
-      <div class="section-title">三隊公開抽籤</div>
+    <section class="section" aria-label="兩組公開抽籤">
+      <div class="section-title">兩組公開抽籤</div>
       <p class="section-hint">
-        為三隊各抽出一條<strong>不同</strong>的路線（共 10 條路線，難度相同）。
-        抽籤完成後，請各隊導師開啟<strong>導師版</strong>並設定對應路線。
+        為兩組各抽出一條<strong>不同</strong>的路線（共 10 條路線，依選錯機率平衡難度）。
+        抽籤完成後，請各組導師開啟<strong>導師版</strong>並設定對應路線。
       </p>
 
       <div class="ballot-grid" id="ballotGrid">
         <div class="team-card" data-team="1">
-          <div class="team-name">第 1 隊</div>
+          <div class="team-name">第 1 組</div>
           <div class="team-route idle" id="teamRoute1">尚未抽籤</div>
         </div>
         <div class="team-card" data-team="2">
-          <div class="team-name">第 2 隊</div>
+          <div class="team-name">第 2 組</div>
           <div class="team-route idle" id="teamRoute2">尚未抽籤</div>
-        </div>
-        <div class="team-card" data-team="3">
-          <div class="team-name">第 3 隊</div>
-          <div class="team-route idle" id="teamRoute3">尚未抽籤</div>
         </div>
       </div>
 
       <div class="ballot-actions">
-        <button type="button" id="drawNextBtn" class="btn btn-accent">抽下一隊</button>
-        <button type="button" id="drawAllBtn" class="btn btn-primary">一次抽完三隊</button>
+        <button type="button" id="drawNextBtn" class="btn btn-accent">抽下一組</button>
+        <button type="button" id="drawAllBtn" class="btn btn-primary">一次抽完兩組</button>
         <button type="button" id="resetBallotBtn" class="btn btn-secondary">重設抽籤</button>
       </div>
 
       <div class="results-panel" id="resultsPanel" hidden>
-        <div class="results-title">導師版連結（抽籤完成後發給各隊導師）</div>
+        <div class="results-title">導師版連結（抽籤完成後發給各組導師）</div>
         <ul class="results-list" id="resultsList"></ul>
       </div>
     </section>
@@ -639,25 +686,25 @@
       <div class="section-title">遊戲規則（向參與者宣讀）</div>
       <ul class="rules-list">
         <li>格子以<strong>欄 A–E</strong>（左至右）、<strong>行 1–7</strong>（底至頂）標示。</li>
-        <li>7 位隊員（<strong>A–G</strong>）按順序輪流猜測，只有最前方者負責選格。</li>
+        <li>兩組各 <strong>11</strong> 人（<strong>A–K</strong>），必須<strong>單行排隊</strong>輪候；只有最前方者負責選格。</li>
         <li>第一步：可選<strong>底行任意一格</strong>（選錯入口也算失敗）。</li>
         <li>之後：只能選與現位置<strong>上下左右相鄰</strong>的格子。</li>
         <li>猜對 <strong>✓</strong>：該隊員繼續猜，進度保留。</li>
         <li>猜錯 <strong>✕</strong>：顯示 3 秒，進度清零，該隊員排到<strong>隊尾</strong>。</li>
-        <li>目標：由底行至頂行，走完整條隱藏路線即勝。</li>
-        <li>三隊將各抽一條<strong>不同</strong>的隱藏路線，難度相同。</li>
+        <li>目標：由底行至頂行，走完整條隱藏路線；全組均需通關。</li>
+        <li>兩組將各抽一條<strong>不同</strong>的隱藏路線（難度已按機率平衡）。</li>
       </ul>
     </section>
 
     <section class="section host-guide">
       <details>
-        <summary>主禮賓操作指引（點擊展開）</summary>
+        <summary>活動主持操作指引（點擊展開）</summary>
         <ol>
           <li>以<strong>單一投影</strong>開啟本頁，向全體參與者簡介規則。</li>
-          <li>使用上方<strong>互動示範</strong>：路線對參與者隱藏，規則與導師版相同（底行起步、相鄰格移動）；可故意點錯底行或相鄰格示範 ✕（示範用直線路線為 C 欄由下至上，僅供主禮賓參考）。</li>
-          <li>示範後進行<strong>三隊公開抽籤</strong>：建議逐隊抽籤以增加儀式感，或按「一次抽完三隊」。</li>
-          <li>宣讀各隊路線編號，並將下方<strong>導師版連結</strong>發給各隊導師。</li>
-          <li>各隊導師在實體地格進行遊戲，使用導師版同步記錄成績。</li>
+          <li>使用上方<strong>互動示範</strong>：路線對參與者隱藏，規則與導師版相同（底行起步、相鄰格移動、11 人單行輪候）；可故意點錯底行或相鄰格示範 ✕（示範用直線路線為 C 欄由下至上，僅供活動主持參考）。</li>
+          <li>示範後進行<strong>兩組公開抽籤</strong>：建議逐組抽籤以增加儀式感，或按「一次抽完兩組」。</li>
+          <li>宣讀各組路線編號，並將下方<strong>導師版連結</strong>發給各組導師。</li>
+          <li>各組導師在實體地格進行遊戲，使用導師版同步記錄成績。</li>
         </ol>
       </details>
     </section>
@@ -678,10 +725,11 @@
 
     const MEMBER_COLORS = [
       "#1a3d6d", "#f15a24", "#0f766e", "#7c3aed",
-      "#0369a1", "#b45309", "#be123c",
+      "#0369a1", "#b45309", "#be123c", "#15803d",
+      "#a21caf", "#0e7490", "#c2410c",
     ];
-    const ALL_MEMBERS = ["A", "B", "C", "D", "E", "F", "G"];
-    const TEAM_COUNT = 3;
+    const ALL_MEMBERS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K"];
+    const TEAM_COUNT = 2;
     const ROUTE_POOL_SIZE = 10;
     const DRAW_ANIMATION_MS = 1400;
     const DRAW_TICK_MS = 80;
@@ -698,7 +746,7 @@
     let failMember = null;
     let currentRunSteps = [];
 
-    let teamRoutes = [null, null, null];
+    let teamRoutes = [null, null];
     let remainingRoutes = [];
     let nextTeamToDraw = 0;
     let isDrawing = false;
@@ -990,7 +1038,7 @@
       resultsList.innerHTML = teamRoutes.map((route, i) => {
         const team = i + 1;
         const url = facilitatorUrl(team, route);
-        return `<li>第 ${team} 隊 · 路線 ${route} — <a href="${url}" target="_blank" rel="noopener">${url}</a></li>`;
+        return `<li>第 ${team} 組 · 路線 ${route} — <a href="${url}" target="_blank" rel="noopener">${url}</a></li>`;
       }).join("");
     }
 
@@ -1054,7 +1102,7 @@
 
     function resetBallot() {
       stopDrawAnimation();
-      teamRoutes = [null, null, null];
+      teamRoutes = [null, null];
       nextTeamToDraw = 0;
       initBallotPool();
       for (let i = 0; i < TEAM_COUNT; i++) updateTeamCard(i, "idle");
