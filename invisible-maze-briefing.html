@@ -447,6 +447,11 @@
       color: #fff;
     }
 
+    .btn-primary.active {
+      background: #0f2748;
+      box-shadow: inset 0 0 0 2px #fde68a;
+    }
+
     .btn-secondary {
       background: #e8eef5;
       color: var(--brand-blue);
@@ -617,11 +622,11 @@
     </header>
 
     <section class="section" aria-label="隱藏路線互動示範">
-      <div class="demo-badge">隱藏路線 · 互動示範</div>
+      <div class="demo-badge">示範路線 · 類似正式路線風格 · 非正式比賽用</div>
       <div class="section-title">規則示範</div>
       <p class="section-hint">
-        路線對參與者<strong>完全隱藏</strong>。活動主持依真實規則操作：第一步只能選<strong>底行</strong>，
-        之後只能選<strong>相鄰格</strong>；點錯可示範 ✕ 失敗重置及單行輪換。
+        預設路線<strong>隱藏</strong>。活動主持依真實規則示範：底行起步、只可正交移動、猜錯退回隊尾。
+        需要對照時可按「顯示／隱藏路線」（黃色格）；正式抽籤路線與此示範不同。
       </p>
 
       <div class="board-wrap" style="margin-top:0.35rem">
@@ -648,6 +653,7 @@
       </section>
 
       <div class="controls" style="margin-top:0.65rem">
+        <button type="button" id="togglePathBtn" class="btn btn-primary" aria-pressed="false">顯示／隱藏路線</button>
         <button type="button" id="resetDemoBtn" class="btn btn-secondary">重設示範</button>
       </div>
     </section>
@@ -701,7 +707,7 @@
         <summary>活動主持操作指引（點擊展開）</summary>
         <ol>
           <li>以<strong>單一投影</strong>開啟本頁，向全體參與者簡介規則。</li>
-          <li>使用上方<strong>互動示範</strong>：路線對參與者隱藏，規則與導師版相同（底行起步、相鄰格移動、11 人單行輪候）；可故意點錯底行或相鄰格示範 ✕（示範用直線路線為 C 欄由下至上，僅供活動主持參考）。</li>
+          <li>使用上方<strong>互動示範</strong>：路線預設隱藏，規則與導師版相同；可用「顯示／隱藏路線」對照講解（示範路線類似正式路線 2，但並非比賽用路線）。</li>
           <li>示範後進行<strong>兩組公開抽籤</strong>：建議逐組抽籤以增加儀式感，或按「一次抽完兩組」。</li>
           <li>宣讀各組路線編號，並將下方<strong>導師版連結</strong>發給各組導師。</li>
           <li>各組導師在實體地格進行遊戲，使用導師版同步記錄成績。</li>
@@ -715,13 +721,27 @@
     const ROWS = 7;
     const FAIL_DISPLAY_MS = 3000;
     const COL_LABELS = ["A", "B", "C", "D", "E"];
-    const DEMO_COL = 2; // column C — straight line demo
 
-    /** Straight vertical demo path: C7 → C1 (bottom to top) */
-    const DEMO_PATH = [];
-    for (let row = ROWS - 1; row >= 0; row--) {
-      DEMO_PATH.push({ col: DEMO_COL, row });
-    }
+    /**
+     * Demo path — similar shape to official route 2, but not identical.
+     * Route 2: D1→D2→C2→C3→B3→B4→C4→C5→B5→A5→A6→A7
+     * Demo:    D1→D2→D3→C3→B3→B4→C4→C5→B5→A5→A6→A7
+     * Single row-7 exit (A7).
+     */
+    const DEMO_PATH = [
+      { col: 3, row: 6 },
+      { col: 3, row: 5 },
+      { col: 3, row: 4 },
+      { col: 2, row: 4 },
+      { col: 1, row: 4 },
+      { col: 1, row: 3 },
+      { col: 2, row: 3 },
+      { col: 2, row: 2 },
+      { col: 1, row: 2 },
+      { col: 0, row: 2 },
+      { col: 0, row: 1 },
+      { col: 0, row: 0 },
+    ];
 
     const MEMBER_COLORS = [
       "#1a3d6d", "#f15a24", "#0f766e", "#7c3aed",
@@ -737,6 +757,7 @@
     const FACILITATOR_BASE = "invisible-maze-facilitator.html";
 
     let pathIndex = -1;
+    let pathVisible = false;
     let inputLocked = false;
     let completed = false;
     let queue = [...ALL_MEMBERS];
@@ -759,6 +780,7 @@
     const queueEl = document.getElementById("queue");
     const queueNowEl = document.getElementById("queueNow");
     const resetDemoBtn = document.getElementById("resetDemoBtn");
+    const togglePathBtn = document.getElementById("togglePathBtn");
     const drawNextBtn = document.getElementById("drawNextBtn");
     const drawAllBtn = document.getElementById("drawAllBtn");
     const resetBallotBtn = document.getElementById("resetBallotBtn");
@@ -887,9 +909,12 @@
     }
 
     function renderBoard() {
+      const pathKeys = new Set(DEMO_PATH.map((p) => `${p.col},${p.row}`));
+
       for (let row = 0; row < ROWS; row++) {
         for (let col = 0; col < COLS; col++) {
           const btn = cellButtons[row][col];
+          const onPath = pathKeys.has(`${col},${row}`);
           const progressed = pathIndex >= 0 && DEMO_PATH.slice(0, pathIndex + 1).some(
             (p) => p.col === col && p.row === row
           );
@@ -908,6 +933,8 @@
           } else if (progressed && ownerId) {
             btn.classList.add("correct");
             setCellContent(btn, playerMarker(ownerId));
+          } else if (pathVisible && onPath) {
+            btn.classList.add("path-hint");
           }
 
           btn.disabled = completed || inputLocked;
@@ -970,6 +997,23 @@
       }, FAIL_DISPLAY_MS);
     }
 
+    function toggleHiddenPath() {
+      pathVisible = !pathVisible;
+      togglePathBtn.classList.toggle("active", pathVisible);
+      togglePathBtn.setAttribute("aria-pressed", String(pathVisible));
+      renderBoard();
+
+      if (pathVisible) {
+        setStatus("示範路線已顯示（黃色）。再按一次可隱藏。");
+      } else if (completed) {
+        setStatus("示範完成！實際遊戲中路線同樣是隱藏的。", "success");
+      } else if (pathIndex < 0) {
+        setStatus(defaultPrompt());
+      } else {
+        setStatus(`猜對 ✓ — 隊員 ${currentMember()} 繼續猜測。`, "success");
+      }
+    }
+
     function resetDemo() {
       if (failTimerId) { window.clearTimeout(failTimerId); failTimerId = null; }
       pathIndex = -1;
@@ -979,6 +1023,9 @@
       failMember = null;
       inputLocked = false;
       completed = false;
+      pathVisible = false;
+      togglePathBtn.classList.remove("active");
+      togglePathBtn.setAttribute("aria-pressed", "false");
       queue = [...ALL_MEMBERS];
       renderQueue();
       renderBoard();
@@ -1119,6 +1166,7 @@
     updateBallotButtons();
 
     resetDemoBtn.addEventListener("click", resetDemo);
+    togglePathBtn.addEventListener("click", toggleHiddenPath);
     drawNextBtn.addEventListener("click", drawNextTeam);
     drawAllBtn.addEventListener("click", drawAllTeams);
     resetBallotBtn.addEventListener("click", resetBallot);
