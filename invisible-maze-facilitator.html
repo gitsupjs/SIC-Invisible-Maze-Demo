@@ -1108,7 +1108,7 @@
         </ol>
 
         <p class="guide-note">
-          兩組路線由活動主持在簡報版抽籤分配；10 條路線依格子選錯機率平衡難度，確保各組公平。
+          兩組路線由活動主持在簡報版抽籤分配；10 條路線依格子選錯機率平衡難度，且各僅一個第 7 行出口，確保各組公平。
           本頁僅供該組導師依已抽籤結果操作及記錄成績。
         </p>
       </div>
@@ -1126,57 +1126,57 @@
     const FAIL_DISPLAY_MS = 3000;
 
     const ROUTES = [
-      // All routes: 12 cells, equal probability difficulty (deg-sum of first 11 cells = 41)
-      // Entrance always 1/5; step difficulty by cell branching: corners 1/2, edges 1/3, middle 1/4
-      [ // 1: B1→B2→B3→C3→D3→D4→D5→E5→E6→D6→D7→E7
-        { col: 1, row: 6 }, { col: 1, row: 5 }, { col: 1, row: 4 }, { col: 2, row: 4 },
-        { col: 3, row: 4 }, { col: 3, row: 3 }, { col: 3, row: 2 }, { col: 4, row: 2 },
-        { col: 4, row: 1 }, { col: 3, row: 1 }, { col: 3, row: 0 }, { col: 4, row: 0 },
-      ],
-      [ // 2: C1→C2→C3→B3→A3→A4→B4→B5→B6→C6→C7→D7
-        { col: 2, row: 6 }, { col: 2, row: 5 }, { col: 2, row: 4 }, { col: 1, row: 4 },
-        { col: 0, row: 4 }, { col: 0, row: 3 }, { col: 1, row: 3 }, { col: 1, row: 2 },
-        { col: 1, row: 1 }, { col: 2, row: 1 }, { col: 2, row: 0 }, { col: 3, row: 0 },
-      ],
-      [ // 3: B1→B2→C2→C3→C4→C5→D5→E5→E6→D6→D7→C7
-        { col: 1, row: 6 }, { col: 1, row: 5 }, { col: 2, row: 5 }, { col: 2, row: 4 },
-        { col: 2, row: 3 }, { col: 2, row: 2 }, { col: 3, row: 2 }, { col: 4, row: 2 },
-        { col: 4, row: 1 }, { col: 3, row: 1 }, { col: 3, row: 0 }, { col: 2, row: 0 },
-      ],
-      [ // 4: C1→C2→C3→B3→A3→A4→B4→B5→C5→C6→C7→B7
-        { col: 2, row: 6 }, { col: 2, row: 5 }, { col: 2, row: 4 }, { col: 1, row: 4 },
-        { col: 0, row: 4 }, { col: 0, row: 3 }, { col: 1, row: 3 }, { col: 1, row: 2 },
-        { col: 2, row: 2 }, { col: 2, row: 1 }, { col: 2, row: 0 }, { col: 1, row: 0 },
-      ],
-      [ // 5: E1→D1→D2→C2→C3→B3→B4→B5→C5→D5→D6→D7
+      // 12 cells; equal probability difficulty (deg-sum of first 11 = 41)
+      // Exactly one cell on row 7 (exit); reaching it = escape
+      [ // 1: E1→D1→D2→C2→B2→B3→B4→B5→C5→C6→D6→D7
         { col: 4, row: 6 }, { col: 3, row: 6 }, { col: 3, row: 5 }, { col: 2, row: 5 },
-        { col: 2, row: 4 }, { col: 1, row: 4 }, { col: 1, row: 3 }, { col: 1, row: 2 },
+        { col: 1, row: 5 }, { col: 1, row: 4 }, { col: 1, row: 3 }, { col: 1, row: 2 },
+        { col: 2, row: 2 }, { col: 2, row: 1 }, { col: 3, row: 1 }, { col: 3, row: 0 },
+      ],
+      [ // 2: B1→C1→C2→C3→B3→B4→B5→C5→D5→D6→E6→E7
+        { col: 1, row: 6 }, { col: 2, row: 6 }, { col: 2, row: 5 }, { col: 2, row: 4 },
+        { col: 1, row: 4 }, { col: 1, row: 3 }, { col: 1, row: 2 }, { col: 2, row: 2 },
+        { col: 3, row: 2 }, { col: 3, row: 1 }, { col: 4, row: 1 }, { col: 4, row: 0 },
+      ],
+      [ // 3: A1→A2→B2→C2→C3→C4→D4→D5→D6→C6→B6→B7
+        { col: 0, row: 6 }, { col: 0, row: 5 }, { col: 1, row: 5 }, { col: 2, row: 5 },
+        { col: 2, row: 4 }, { col: 2, row: 3 }, { col: 3, row: 3 }, { col: 3, row: 2 },
+        { col: 3, row: 1 }, { col: 2, row: 1 }, { col: 1, row: 1 }, { col: 1, row: 0 },
+      ],
+      [ // 4: C1→C2→C3→C4→D4→E4→E5→D5→C5→C6→B6→B7
+        { col: 2, row: 6 }, { col: 2, row: 5 }, { col: 2, row: 4 }, { col: 2, row: 3 },
+        { col: 3, row: 3 }, { col: 4, row: 3 }, { col: 4, row: 2 }, { col: 3, row: 2 },
+        { col: 2, row: 2 }, { col: 2, row: 1 }, { col: 1, row: 1 }, { col: 1, row: 0 },
+      ],
+      [ // 5: E1→D1→D2→C2→C3→C4→B4→B5→C5→D5→D6→D7
+        { col: 4, row: 6 }, { col: 3, row: 6 }, { col: 3, row: 5 }, { col: 2, row: 5 },
+        { col: 2, row: 4 }, { col: 2, row: 3 }, { col: 1, row: 3 }, { col: 1, row: 2 },
         { col: 2, row: 2 }, { col: 3, row: 2 }, { col: 3, row: 1 }, { col: 3, row: 0 },
       ],
-      [ // 6: D1→D2→D3→D4→E4→E5→D5→D6→C6→C7→B7→A7
-        { col: 3, row: 6 }, { col: 3, row: 5 }, { col: 3, row: 4 }, { col: 3, row: 3 },
-        { col: 4, row: 3 }, { col: 4, row: 2 }, { col: 3, row: 2 }, { col: 3, row: 1 },
-        { col: 2, row: 1 }, { col: 2, row: 0 }, { col: 1, row: 0 }, { col: 0, row: 0 },
-      ],
-      [ // 7: D1→D2→E2→E3→D3→D4→C4→B4→B5→C5→C6→C7
+      [ // 6: D1→D2→E2→E3→D3→D4→C4→C5→B5→B6→C6→C7
         { col: 3, row: 6 }, { col: 3, row: 5 }, { col: 4, row: 5 }, { col: 4, row: 4 },
-        { col: 3, row: 4 }, { col: 3, row: 3 }, { col: 2, row: 3 }, { col: 1, row: 3 },
-        { col: 1, row: 2 }, { col: 2, row: 2 }, { col: 2, row: 1 }, { col: 2, row: 0 },
+        { col: 3, row: 4 }, { col: 3, row: 3 }, { col: 2, row: 3 }, { col: 2, row: 2 },
+        { col: 1, row: 2 }, { col: 1, row: 1 }, { col: 2, row: 1 }, { col: 2, row: 0 },
       ],
-      [ // 8: D1→D2→E2→E3→D3→D4→C4→B4→B5→B6→B7→A7
-        { col: 3, row: 6 }, { col: 3, row: 5 }, { col: 4, row: 5 }, { col: 4, row: 4 },
-        { col: 3, row: 4 }, { col: 3, row: 3 }, { col: 2, row: 3 }, { col: 1, row: 3 },
-        { col: 1, row: 2 }, { col: 1, row: 1 }, { col: 1, row: 0 }, { col: 0, row: 0 },
+      [ // 7: B1→C1→C2→B2→B3→B4→C4→C5→D5→D6→E6→E7
+        { col: 1, row: 6 }, { col: 2, row: 6 }, { col: 2, row: 5 }, { col: 1, row: 5 },
+        { col: 1, row: 4 }, { col: 1, row: 3 }, { col: 2, row: 3 }, { col: 2, row: 2 },
+        { col: 3, row: 2 }, { col: 3, row: 1 }, { col: 4, row: 1 }, { col: 4, row: 0 },
       ],
-      [ // 9: A1→A2→B2→C2→C3→B3→B4→B5→B6→C6→D6→D7
-        { col: 0, row: 6 }, { col: 0, row: 5 }, { col: 1, row: 5 }, { col: 2, row: 5 },
-        { col: 2, row: 4 }, { col: 1, row: 4 }, { col: 1, row: 3 }, { col: 1, row: 2 },
-        { col: 1, row: 1 }, { col: 2, row: 1 }, { col: 3, row: 1 }, { col: 3, row: 0 },
+      [ // 8: C1→C2→C3→D3→E3→E4→D4→D5→C5→C6→B6→B7
+        { col: 2, row: 6 }, { col: 2, row: 5 }, { col: 2, row: 4 }, { col: 3, row: 4 },
+        { col: 4, row: 4 }, { col: 4, row: 3 }, { col: 3, row: 3 }, { col: 3, row: 2 },
+        { col: 2, row: 2 }, { col: 2, row: 1 }, { col: 1, row: 1 }, { col: 1, row: 0 },
       ],
-      [ // 10: E1→E2→D2→D3→C3→C4→C5→C6→B6→B7→C7→D7
-        { col: 4, row: 6 }, { col: 4, row: 5 }, { col: 3, row: 5 }, { col: 3, row: 4 },
-        { col: 2, row: 4 }, { col: 2, row: 3 }, { col: 2, row: 2 }, { col: 2, row: 1 },
-        { col: 1, row: 1 }, { col: 1, row: 0 }, { col: 2, row: 0 }, { col: 3, row: 0 },
+      [ // 9: E1→D1→D2→C2→C3→B3→B4→C4→D4→D5→D6→D7
+        { col: 4, row: 6 }, { col: 3, row: 6 }, { col: 3, row: 5 }, { col: 2, row: 5 },
+        { col: 2, row: 4 }, { col: 1, row: 4 }, { col: 1, row: 3 }, { col: 2, row: 3 },
+        { col: 3, row: 3 }, { col: 3, row: 2 }, { col: 3, row: 1 }, { col: 3, row: 0 },
+      ],
+      [ // 10: B1→C1→C2→D2→D3→D4→C4→C5→C6→B6→A6→A7
+        { col: 1, row: 6 }, { col: 2, row: 6 }, { col: 2, row: 5 }, { col: 3, row: 5 },
+        { col: 3, row: 4 }, { col: 3, row: 3 }, { col: 2, row: 3 }, { col: 2, row: 2 },
+        { col: 2, row: 1 }, { col: 1, row: 1 }, { col: 0, row: 1 }, { col: 0, row: 0 },
       ],
     ];
 
@@ -1785,8 +1785,9 @@
       if (path[0].row !== ROWS - 1) {
         console.warn(`${label} should start on the bottom row (row 6).`);
       }
-      if (path[path.length - 1].row !== 0) {
-        console.warn(`${label} should end on the top row (row 0).`);
+      const topCells = path.filter((p) => p.row === 0);
+      if (topCells.length !== 1 || path[path.length - 1].row !== 0) {
+        console.warn(`${label} must end with exactly one row-7 (exit) cell.`);
       }
       const seen = new Set();
       for (let i = 0; i < path.length; i++) {
