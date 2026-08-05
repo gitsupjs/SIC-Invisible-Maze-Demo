@@ -1124,7 +1124,6 @@
     const ROWS = 7;
     const PATH_LENGTH = 12;
     const FAIL_DISPLAY_MS = 3000;
-    const FAIL_ALARM_MS = 1400;
 
     const ROUTES = [
       // 12 cells; identical Πdeg = 1769472 → exact blind-success P = 1/8847360
@@ -1244,70 +1243,43 @@
     const adminUnlockZone = document.getElementById("adminUnlockZone");
     const cellButtons = [];
 
-    /** Shared AudioContext for fail alarm (created / resumed on first user gesture) */
-    let audioCtx = null;
-
-    function getAudioContext() {
-      if (!audioCtx) {
-        const AC = window.AudioContext || window.webkitAudioContext;
-        if (!AC) return null;
-        audioCtx = new AC();
-      }
-      return audioCtx;
-    }
+    /** Fail alarm: police siren MP3 (unlocked on first user gesture) */
+    const FAIL_ALARM_SRC = "cops-siren-alarm.mp3";
+    const failAlarmAudio = new Audio(FAIL_ALARM_SRC);
+    failAlarmAudio.preload = "auto";
+    failAlarmAudio.volume = 1;
 
     function unlockAudio() {
-      const ctx = getAudioContext();
-      if (ctx && ctx.state === "suspended") {
-        ctx.resume().catch(() => {});
+      // Prime playback so later fail alarms are not blocked by autoplay policy
+      const prevVol = failAlarmAudio.volume;
+      failAlarmAudio.volume = 0;
+      const p = failAlarmAudio.play();
+      if (p && typeof p.then === "function") {
+        p.then(() => {
+          failAlarmAudio.pause();
+          failAlarmAudio.currentTime = 0;
+          failAlarmAudio.volume = prevVol;
+        }).catch(() => {
+          failAlarmAudio.volume = prevVol;
+        });
+      } else {
+        failAlarmAudio.pause();
+        failAlarmAudio.currentTime = 0;
+        failAlarmAudio.volume = prevVol;
       }
     }
 
-    /**
-     * Loud dual-tone fail alarm (referee-style beep) — no external audio file needed.
-     */
     function playFailAlarm() {
-      const ctx = getAudioContext();
-      if (!ctx) return;
-
-      const start = () => {
-        const now = ctx.currentTime;
-        const master = ctx.createGain();
-        master.gain.setValueAtTime(0.0001, now);
-        master.gain.exponentialRampToValueAtTime(0.85, now + 0.02);
-        master.gain.setValueAtTime(0.85, now + FAIL_ALARM_MS / 1000 - 0.12);
-        master.gain.exponentialRampToValueAtTime(0.0001, now + FAIL_ALARM_MS / 1000);
-        master.connect(ctx.destination);
-
-        // Alternating high/low alarm bursts
-        const pattern = [
-          { freq: 880, at: 0, dur: 0.16 },
-          { freq: 587, at: 0.18, dur: 0.16 },
-          { freq: 880, at: 0.36, dur: 0.16 },
-          { freq: 587, at: 0.54, dur: 0.16 },
-          { freq: 880, at: 0.72, dur: 0.18 },
-          { freq: 440, at: 0.95, dur: 0.35 },
-        ];
-
-        pattern.forEach(({ freq, at, dur }) => {
-          const osc = ctx.createOscillator();
-          const gain = ctx.createGain();
-          osc.type = "square";
-          osc.frequency.setValueAtTime(freq, now + at);
-          gain.gain.setValueAtTime(0.0001, now + at);
-          gain.gain.exponentialRampToValueAtTime(0.55, now + at + 0.015);
-          gain.gain.exponentialRampToValueAtTime(0.0001, now + at + dur);
-          osc.connect(gain);
-          gain.connect(master);
-          osc.start(now + at);
-          osc.stop(now + at + dur + 0.02);
-        });
-      };
-
-      if (ctx.state === "suspended") {
-        ctx.resume().then(start).catch(() => {});
-      } else {
-        start();
+      try {
+        failAlarmAudio.pause();
+        failAlarmAudio.currentTime = 0;
+        failAlarmAudio.volume = 1;
+        const p = failAlarmAudio.play();
+        if (p && typeof p.catch === "function") {
+          p.catch(() => {});
+        }
+      } catch (_) {
+        /* ignore playback errors */
       }
     }
 
