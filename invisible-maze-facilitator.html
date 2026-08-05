@@ -1094,7 +1094,7 @@
         <h3>三、進行中操作</h3>
         <ul>
           <li><strong>單行輪候</strong>：只有最前方隊員（A–K）負責猜測；猜對可繼續，猜錯則排到隊尾。</li>
-          <li><strong>格子標記</strong>：點選後顯示該隊員顏色小人及代號；正確為綠格，錯誤會<strong>響起警報</strong>並顯示 ✕ 3 秒後全組回到起點。</li>
+          <li><strong>格子標記</strong>：點選後顯示該隊員顏色小人及代號；正確為綠格，錯誤會<strong>響起警報</strong>並顯示 ✕ 3 秒後全組回到起點；全組通關時播放成功音效。</li>
           <li><strong>成績紀錄</strong>：自動記錄每次<strong>參與</strong>及當中的每次<strong>猜測</strong>（✓／✕ 及格子編號）。</li>
           <li>導師專用：連續點擊頁面<strong>右下角 5 次</strong>，可顯示「顯示／隱藏路線」（建議留待檢討或示範後使用）。</li>
         </ul>
@@ -1243,44 +1243,63 @@
     const adminUnlockZone = document.getElementById("adminUnlockZone");
     const cellButtons = [];
 
-    /** Fail alarm: police siren MP3 (unlocked on first user gesture) */
-    const FAIL_ALARM_SRC = "cops-siren-alarm.mp3";
+    /** Fail / success soundtracks extracted from host clips */
+    const FAIL_ALARM_SRC = "fail-alarm.mp3";
+    const SUCCESS_CHIME_SRC = "success-chime.mp3";
     const failAlarmAudio = new Audio(FAIL_ALARM_SRC);
+    const successChimeAudio = new Audio(SUCCESS_CHIME_SRC);
     failAlarmAudio.preload = "auto";
+    successChimeAudio.preload = "auto";
     failAlarmAudio.volume = 1;
+    successChimeAudio.volume = 1;
 
-    function unlockAudio() {
-      // Prime playback so later fail alarms are not blocked by autoplay policy
-      const prevVol = failAlarmAudio.volume;
-      failAlarmAudio.volume = 0;
-      const p = failAlarmAudio.play();
+    function primeAudio(audio) {
+      const prevVol = audio.volume;
+      audio.volume = 0;
+      const p = audio.play();
       if (p && typeof p.then === "function") {
         p.then(() => {
-          failAlarmAudio.pause();
-          failAlarmAudio.currentTime = 0;
-          failAlarmAudio.volume = prevVol;
+          audio.pause();
+          audio.currentTime = 0;
+          audio.volume = prevVol;
         }).catch(() => {
-          failAlarmAudio.volume = prevVol;
+          audio.volume = prevVol;
         });
       } else {
-        failAlarmAudio.pause();
-        failAlarmAudio.currentTime = 0;
-        failAlarmAudio.volume = prevVol;
+        audio.pause();
+        audio.currentTime = 0;
+        audio.volume = prevVol;
       }
     }
 
-    function playFailAlarm() {
+    function unlockAudio() {
+      // Prime both clips so later playback is not blocked by autoplay policy
+      primeAudio(failAlarmAudio);
+      primeAudio(successChimeAudio);
+    }
+
+    function playAudioClip(audio) {
       try {
         failAlarmAudio.pause();
-        failAlarmAudio.currentTime = 0;
-        failAlarmAudio.volume = 1;
-        const p = failAlarmAudio.play();
+        successChimeAudio.pause();
+        audio.pause();
+        audio.currentTime = 0;
+        audio.volume = 1;
+        const p = audio.play();
         if (p && typeof p.catch === "function") {
           p.catch(() => {});
         }
       } catch (_) {
         /* ignore playback errors */
       }
+    }
+
+    function playFailAlarm() {
+      playAudioClip(failAlarmAudio);
+    }
+
+    function playSuccessChime() {
+      playAudioClip(successChimeAudio);
     }
 
     function createEmptyMemberLogs() {
@@ -1685,6 +1704,7 @@
         if (pathIndex === path.length - 1) {
           completed = true;
           renderBoard();
+          playSuccessChime();
           setStatus(
             `完成！隊員 ${currentMember()} 帶領隊伍到達終點。`,
             "success"
