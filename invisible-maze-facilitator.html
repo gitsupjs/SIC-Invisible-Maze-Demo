@@ -138,6 +138,27 @@
       font-weight: 500;
     }
 
+    .timer-display {
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 0.04em;
+      color: var(--brand-orange);
+    }
+
+    .timer-display.urgent {
+      color: #b91c1c;
+      animation: timer-pulse 0.8s ease-in-out infinite alternate;
+    }
+
+    .timer-display.expired {
+      color: #b91c1c;
+      animation: none;
+    }
+
+    @keyframes timer-pulse {
+      from { opacity: 1; }
+      to { opacity: 0.55; }
+    }
+
     /* ---------- Single-file queue line (below grid) ---------- */
     .queue-line-wrap {
       background: var(--surface);
@@ -825,6 +846,18 @@
       border-color: var(--brand-orange);
     }
 
+    .score-card.passed {
+      background: #f0fdf4;
+      border-color: #15803d;
+    }
+
+    .score-card.passed .score-card-id::after {
+      content: " 已通關";
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: #15803d;
+    }
+
     .score-card-head {
       display: flex;
       align-items: center;
@@ -1015,6 +1048,14 @@
             <span class="meta-label">模式：</span>
             <strong>導師操作版</strong>
           </div>
+          <div class="meta-item timer-meta">
+            <span class="meta-label">剩餘時間：</span>
+            <strong id="timerDisplay" class="timer-display">25:00</strong>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">已通關：</span>
+            <strong id="passedDisplay">0 / 11</strong>
+          </div>
         </div>
       </div>
     </header>
@@ -1069,7 +1110,8 @@
         <li>之後：只能選與現位置<strong>上下左右相鄰</strong>的格子。</li>
         <li>猜對 <strong>✓</strong>：該隊員繼續猜，進度保留。</li>
         <li>猜錯 <strong>✕</strong>：顯示 3 秒，進度清零，該隊員排到<strong>隊尾</strong>。</li>
-        <li>目標：由底行至頂行，走完整條隱藏路線；全組均需通關。</li>
+        <li>一人走完全程僅算<strong>個人通關</strong>；須<strong>全組 11 人</strong>皆通關才算完成。</li>
+        <li>正式時限 <strong>25 分鐘</strong>（首次點格後開始倒數）；時間到即鎖定並響起逾時警報。</li>
       </ul>
     </section>
 
@@ -1093,7 +1135,8 @@
 
         <h3>三、進行中操作</h3>
         <ul>
-          <li><strong>單行輪候</strong>：只有最前方隊員（A–K）負責猜測；猜對可繼續，猜錯則排到隊尾。</li>
+          <li><strong>單行輪候</strong>：只有最前方隊員（A–K）負責猜測；猜對可繼續，猜錯則排到隊尾；個人走完全程後離隊，下一位從底行重走，直至 11 人皆通關。</li>
+          <li><strong>計時</strong>：首次點格後開始 25 分鐘倒數；時間到鎖定猜測並播放逾時警報（約 10 秒）。</li>
           <li><strong>格子標記</strong>：點選後顯示該隊員顏色小人及代號；正確為綠格，錯誤會<strong>響起警報</strong>並顯示 ✕ 3 秒後全組回到起點；全組通關時播放成功音效。</li>
           <li><strong>成績紀錄</strong>：自動記錄每次<strong>參與</strong>及當中的每次<strong>猜測</strong>（✓／✕ 及格子編號）。</li>
           <li>導師專用：連續點擊頁面<strong>右下角 5 次</strong>，可顯示「顯示／隱藏路線」（建議留待檢討或示範後使用）。</li>
@@ -1197,8 +1240,11 @@
     let pathVisible = false;
     let inputLocked = false;
     let completed = false;
+    let timedOut = false;
     let queue = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K"];
+    let passedMembers = new Set();
     let failTimerId = null;
+    let passHoldTimerId = null;
 
     /** Current player standing position on the grid; null = off the board */
     let playerPosition = null;
@@ -1223,10 +1269,18 @@
     let adminUnlockTimerId = null;
     const ADMIN_UNLOCK_CLICKS = 5;
     const ADMIN_UNLOCK_RESET_MS = 4000;
+    const GAME_LIMIT_MS = 25 * 60 * 1000;
+    const PASS_HOLD_MS = 1800;
+    const TIMER_URGENT_MS = 60 * 1000;
 
     /** True once a route is selected (URL param or dropdown) */
     let routeReady = false;
     let teamNumber = null;
+
+    /** 25-minute countdown (starts on first valid cell click) */
+    let timerStarted = false;
+    let timerEndsAt = null;
+    let timerIntervalId = null;
 
     const gridEl = document.getElementById("grid");
     const colLabelsEl = document.getElementById("colLabels");
@@ -1240,18 +1294,24 @@
     const resetBtn = document.getElementById("resetBtn");
     const teamMetaEl = document.getElementById("teamMeta");
     const teamMetaValueEl = document.getElementById("teamMetaValue");
+    const timerDisplayEl = document.getElementById("timerDisplay");
+    const passedDisplayEl = document.getElementById("passedDisplay");
     const adminUnlockZone = document.getElementById("adminUnlockZone");
     const cellButtons = [];
 
-    /** Fail / success soundtracks extracted from host clips */
+    /** Fail / success / time-up soundtracks */
     const FAIL_ALARM_SRC = "fail-alarm.mp3";
     const SUCCESS_CHIME_SRC = "success-chime.mp3";
+    const TIMEUP_ALARM_SRC = "timeup-alarm.mp3";
     const failAlarmAudio = new Audio(FAIL_ALARM_SRC);
     const successChimeAudio = new Audio(SUCCESS_CHIME_SRC);
+    const timeupAlarmAudio = new Audio(TIMEUP_ALARM_SRC);
     failAlarmAudio.preload = "auto";
     successChimeAudio.preload = "auto";
+    timeupAlarmAudio.preload = "auto";
     failAlarmAudio.volume = 1;
     successChimeAudio.volume = 1;
+    timeupAlarmAudio.volume = 1;
 
     function primeAudio(audio) {
       const prevVol = audio.volume;
@@ -1273,15 +1333,16 @@
     }
 
     function unlockAudio() {
-      // Prime both clips so later playback is not blocked by autoplay policy
       primeAudio(failAlarmAudio);
       primeAudio(successChimeAudio);
+      primeAudio(timeupAlarmAudio);
     }
 
     function playAudioClip(audio) {
       try {
         failAlarmAudio.pause();
         successChimeAudio.pause();
+        timeupAlarmAudio.pause();
         audio.pause();
         audio.currentTime = 0;
         audio.volume = 1;
@@ -1300,6 +1361,74 @@
 
     function playSuccessChime() {
       playAudioClip(successChimeAudio);
+    }
+
+    function playTimeupAlarm() {
+      playAudioClip(timeupAlarmAudio);
+    }
+
+    function formatTimer(ms) {
+      const totalSec = Math.max(0, Math.ceil(ms / 1000));
+      const m = Math.floor(totalSec / 60);
+      const s = totalSec % 60;
+      return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+    }
+
+    function updatePassedDisplay() {
+      passedDisplayEl.textContent = `${passedMembers.size} / ${ALL_MEMBERS.length}`;
+    }
+
+    function updateTimerDisplay() {
+      if (!timerStarted || timerEndsAt === null) {
+        timerDisplayEl.textContent = "25:00";
+        timerDisplayEl.classList.remove("urgent", "expired");
+        return;
+      }
+
+      const remaining = timerEndsAt - Date.now();
+      timerDisplayEl.textContent = formatTimer(remaining);
+      timerDisplayEl.classList.toggle("urgent", remaining > 0 && remaining <= TIMER_URGENT_MS);
+      timerDisplayEl.classList.toggle("expired", remaining <= 0 || timedOut);
+    }
+
+    function stopTimerInterval() {
+      if (timerIntervalId !== null) {
+        window.clearInterval(timerIntervalId);
+        timerIntervalId = null;
+      }
+    }
+
+    function resetTimerState() {
+      stopTimerInterval();
+      timerStarted = false;
+      timerEndsAt = null;
+      timedOut = false;
+      updateTimerDisplay();
+    }
+
+    function handleTimeUp() {
+      if (timedOut || completed) return;
+      timedOut = true;
+      inputLocked = true;
+      stopTimerInterval();
+      updateTimerDisplay();
+      playTimeupAlarm();
+      setStatus("時間到！25 分鐘已完結。全組停止猜測。", "fail");
+      renderBoard();
+    }
+
+    function startGameTimerIfNeeded() {
+      if (timerStarted || timedOut || completed) return;
+      timerStarted = true;
+      timerEndsAt = Date.now() + GAME_LIMIT_MS;
+      updateTimerDisplay();
+      stopTimerInterval();
+      timerIntervalId = window.setInterval(() => {
+        updateTimerDisplay();
+        if (timerEndsAt !== null && Date.now() >= timerEndsAt) {
+          handleTimeUp();
+        }
+      }, 250);
     }
 
     function createEmptyMemberLogs() {
@@ -1421,7 +1550,7 @@
     }
 
     function currentMember() {
-      return queue[0];
+      return queue.length ? queue[0] : null;
     }
 
     function setStatus(message, tone = "") {
@@ -1433,7 +1562,17 @@
       if (!routeReady) {
         return "請先選擇本組路線（與活動主持抽籤結果一致）。";
       }
-      return `路線 ${routeIndex + 1} · 隊員 ${currentMember()} 輪到 — 請選底行任意一格。`;
+      if (timedOut) {
+        return "時間到！25 分鐘已完結。全組停止猜測。";
+      }
+      if (completed) {
+        return `全組通關！${ALL_MEMBERS.length} 人均已到達終點。`;
+      }
+      const member = currentMember();
+      if (!member) {
+        return "輪候已空。";
+      }
+      return `路線 ${routeIndex + 1} · 隊員 ${member} 輪到 — 請選底行任意一格。（已通關 ${passedMembers.size}/${ALL_MEMBERS.length}）`;
     }
 
     function continuePrompt() {
@@ -1554,7 +1693,11 @@
 
     function renderQueue() {
       queueEl.innerHTML = "";
-      queueNowEl.innerHTML = `現正猜測：<strong>${currentMember()}</strong>`;
+      const member = currentMember();
+      queueNowEl.innerHTML = member
+        ? `現正猜測：<strong>${member}</strong> · 已通關 ${passedMembers.size}/${ALL_MEMBERS.length}`
+        : `已通關 ${passedMembers.size}/${ALL_MEMBERS.length}`;
+      updatePassedDisplay();
 
       queue.forEach((id, index) => {
         const colorIndex = id.charCodeAt(0) - "A".charCodeAt(0);
@@ -1581,7 +1724,11 @@
         const correctCount = allGuesses.filter((g) => g.correct).length;
         const wrongCount = allGuesses.filter((g) => !g.correct).length;
         const card = document.createElement("div");
-        card.className = "score-card" + (id === activeMember ? " active" : "");
+        const hasPassed = passedMembers.has(id);
+        card.className =
+          "score-card" +
+          (id === activeMember ? " active" : "") +
+          (hasPassed ? " passed" : "");
 
         let attemptsHtml = "";
         if (!attempts.length) {
@@ -1660,7 +1807,7 @@
             btn.classList.add("path-hint");
           }
 
-          btn.disabled = completed || inputLocked;
+          btn.disabled = completed || timedOut || inputLocked;
         }
       }
     }
@@ -1685,8 +1832,10 @@
         setStatus(defaultPrompt());
         return;
       }
-      if (inputLocked || completed) return;
+      if (inputLocked || completed || timedOut) return;
       if (!isAttemptable(col, row)) return;
+
+      startGameTimerIfNeeded();
 
       const path = getHiddenPath();
       const nextIndex = pathIndex + 1;
@@ -1702,13 +1851,7 @@
         renderScoreboard();
 
         if (pathIndex === path.length - 1) {
-          completed = true;
-          renderBoard();
-          playSuccessChime();
-          setStatus(
-            `完成！隊員 ${currentMember()} 帶領隊伍到達終點。`,
-            "success"
-          );
+          handleMemberPassed(member);
         } else {
           setStatus(continuePrompt(), "success");
         }
@@ -1718,12 +1861,61 @@
       failAndReset(col, row);
     }
 
+    function handleMemberPassed(memberId) {
+      inputLocked = true;
+      passedMembers.add(memberId);
+      playSuccessChime();
+      updatePassedDisplay();
+      setStatus(
+        `隊員 ${memberId} 個人通關！（${passedMembers.size}/${ALL_MEMBERS.length}）`,
+        "success"
+      );
+      renderBoard();
+
+      if (passHoldTimerId !== null) {
+        window.clearTimeout(passHoldTimerId);
+      }
+
+      passHoldTimerId = window.setTimeout(() => {
+        passHoldTimerId = null;
+        // Remove completed member from the active queue
+        queue = queue.filter((id) => id !== memberId);
+        pathIndex = -1;
+        clearRunProgress();
+        clearFailMarkers();
+        inputLocked = false;
+
+        if (passedMembers.size >= ALL_MEMBERS.length || queue.length === 0) {
+          completed = true;
+          inputLocked = true;
+          stopTimerInterval();
+          playSuccessChime();
+          renderQueue();
+          renderBoard();
+          renderScoreboard();
+          setStatus(
+            `全組通關！${ALL_MEMBERS.length} 人均已到達終點。`,
+            "success"
+          );
+          return;
+        }
+
+        renderQueue();
+        renderBoard();
+        renderScoreboard();
+        setStatus(
+          `隊員 ${memberId} 已通關離隊。隊員 ${currentMember()} 輪到 — 請從底行重新開始。（已通關 ${passedMembers.size}/${ALL_MEMBERS.length}）`
+        );
+      }, PASS_HOLD_MS);
+    }
+
     function rotateQueueAfterMiss() {
       const missed = queue.shift();
       queue.push(missed);
     }
 
     function failAndReset(col, row) {
+      if (timedOut || completed) return;
       inputLocked = true;
       const missedMember = currentMember();
       playFailAlarm();
@@ -1750,20 +1942,22 @@
         failTimerId = null;
         pathIndex = -1;
         clearRunProgress();
-        completed = false;
-        inputLocked = false;
-
+        inputLocked = timedOut || completed;
         btn.classList.remove("fail");
         failPosition = null;
         failMember = null;
 
-        rotateQueueAfterMiss();
-        renderQueue();
-        renderBoard();
-        renderScoreboard();
-        setStatus(
-          `隊員 ${missedMember} 排到隊尾。隊員 ${currentMember()} 輪到 — 請從底行重新開始。`
-        );
+        if (!timedOut && !completed) {
+          rotateQueueAfterMiss();
+          renderQueue();
+          renderBoard();
+          renderScoreboard();
+          setStatus(
+            `隊員 ${missedMember} 排到隊尾。隊員 ${currentMember()} 輪到 — 請從底行重新開始。`
+          );
+        } else {
+          renderBoard();
+        }
       }, FAIL_DISPLAY_MS);
     }
 
@@ -1776,10 +1970,9 @@
       if (pathVisible) {
         setStatus(`路線 ${routeIndex + 1} 已顯示（黃色）。再按一次可隱藏。`);
       } else if (completed) {
-        setStatus(
-          `完成！隊員 ${currentMember()} 帶領隊伍到達終點。`,
-          "success"
-        );
+        setStatus(`全組通關！${ALL_MEMBERS.length} 人均已到達終點。`, "success");
+      } else if (timedOut) {
+        setStatus("時間到！25 分鐘已完結。全組停止猜測。", "fail");
       } else if (pathIndex < 0) {
         setStatus(defaultPrompt());
       } else {
@@ -1792,6 +1985,10 @@
         window.clearTimeout(failTimerId);
         failTimerId = null;
       }
+      if (passHoldTimerId !== null) {
+        window.clearTimeout(passHoldTimerId);
+        passHoldTimerId = null;
+      }
 
       routeReady = true;
       routeIndex = nextIndex;
@@ -1802,12 +1999,17 @@
       completed = false;
       inputLocked = false;
       pathVisible = false;
+      passedMembers = new Set();
+      queue = [...ALL_MEMBERS];
+      resetTimerState();
 
       clearFailMarkers();
       togglePathBtn.classList.remove("active");
       togglePathBtn.setAttribute("aria-pressed", "false");
+      renderQueue();
       renderBoard();
       renderScoreboard();
+      updatePassedDisplay();
 
       const teamNote = teamNumber ? `第 ${teamNumber} 組 · ` : "";
       if (options.fromUrl) {
@@ -1822,14 +2024,20 @@
         window.clearTimeout(failTimerId);
         failTimerId = null;
       }
+      if (passHoldTimerId !== null) {
+        window.clearTimeout(passHoldTimerId);
+        passHoldTimerId = null;
+      }
 
       pathIndex = -1;
       clearRunProgress();
       completed = false;
       inputLocked = false;
       pathVisible = false;
-      queue = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K"];
+      passedMembers = new Set();
+      queue = [...ALL_MEMBERS];
       resetMemberTracking();
+      resetTimerState();
 
       clearFailMarkers();
       togglePathBtn.classList.remove("active");
@@ -1837,6 +2045,7 @@
       renderQueue();
       renderBoard();
       renderScoreboard();
+      updatePassedDisplay();
       setStatus(defaultPrompt());
     }
 
@@ -1908,6 +2117,8 @@
     renderQueue();
     renderScoreboard();
     renderBoard();
+    updatePassedDisplay();
+    updateTimerDisplay();
     parseUrlParams();
     togglePathBtn.setAttribute("aria-pressed", "false");
     togglePathBtn.addEventListener("click", toggleHiddenPath);
