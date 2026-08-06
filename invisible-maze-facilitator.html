@@ -149,14 +149,28 @@
       animation: timer-pulse 0.8s ease-in-out infinite alternate;
     }
 
-    .timer-display.expired {
-      color: #b91c1c;
-      animation: none;
+    .timer-display.stopped {
+      color: #15803d;
     }
 
     .timer-meta {
       align-items: center;
       gap: 0.45rem;
+    }
+
+    .stop-timer-btn {
+      width: auto;
+      min-width: 4.2rem;
+      padding: 0 0.45rem;
+      font-size: 0.64rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .stop-timer-btn:disabled {
+      opacity: 0.45;
+      cursor: default;
+      transform: none;
     }
 
     .penalty-controls {
@@ -1151,12 +1165,13 @@
             <strong>導師操作版</strong>
           </div>
           <div class="meta-item timer-meta">
-            <span class="meta-label">剩餘時間：</span>
-            <strong id="timerDisplay" class="timer-display">25:00</strong>
+            <span class="meta-label">用時：</span>
+            <strong id="timerDisplay" class="timer-display">00:00</strong>
+            <button type="button" id="stopTimerBtn" class="penalty-btn stop-timer-btn" disabled>停止計時</button>
             <div class="penalty-controls" aria-label="違規加罰">
-              <button type="button" id="penaltyMinusBtn" class="penalty-btn" aria-label="減少加罰 30 秒">−</button>
+              <button type="button" id="penaltyMinusBtn" class="penalty-btn" aria-label="減少加罰 10 秒">−</button>
               <span id="penaltyDisplay" class="penalty-display">+0:00</span>
-              <button type="button" id="penaltyPlusBtn" class="penalty-btn" aria-label="加罰 30 秒">+</button>
+              <button type="button" id="penaltyPlusBtn" class="penalty-btn" aria-label="加罰 10 秒">+</button>
             </div>
           </div>
           <div class="meta-item">
@@ -1214,7 +1229,7 @@
       <ul class="rules-list">
         <li>格子以<strong>欄 A–E</strong>（左至右）、<strong>行 1–7</strong>（底至頂）標示。</li>
         <li>每組 <strong>11</strong> 位隊員（<strong>A–K</strong>）<strong>單行輪候</strong>，只有最前方者負責猜測。</li>
-        <li>隊員必須<strong>直線單行排隊</strong>；未依規定排隊每次加罰 <strong>30 秒</strong>（與其他違規相同）。</li>
+        <li>隊員必須<strong>直線單行排隊</strong>；未依規定排隊每次加罰 <strong>10 秒</strong>（與其他違規相同）。</li>
         <li>第一步：可選<strong>底行任意一格</strong>（選錯入口也算失敗）。</li>
         <li>之後：只能選與現位置<strong>上下左右相鄰</strong>的格子。</li>
         <li>猜對 <strong>✓</strong>：該隊員繼續猜，進度保留。</li>
@@ -1227,10 +1242,10 @@
             <li>全場進入「靜默模式」，嚴禁任何口語發聲，只能使用手勢、眼神或肢體語言溝通。</li>
             <li>已通關者不得與未通關者有任何溝通。</li>
             <li>必須保持直線單行排隊；偏離隊列亦屬違規。</li>
-            <li>每出現一次違規，導師按「＋」從剩餘時間<strong>扣除 30 秒</strong>（可按「−」調整）。</li>
+            <li>每出現一次違規，導師按「＋」於總用時<strong>加 10 秒</strong>（可按「−」調整）。</li>
           </ul>
         </li>
-        <li>正式時限 <strong>25 分鐘</strong>（首次點格後開始倒數）；時間到即響起逾時警報。</li>
+        <li>首次點格後開始<strong>正計時</strong>；全組通關或按「停止計時」記錄總用時（含加罰）。</li>
       </ul>
     </section>
 
@@ -1257,8 +1272,8 @@
         <ul>
           <li><strong>單行輪候</strong>：只有最前方隊員（A–K）負責猜測；猜對可繼續，猜錯或逾時則排到隊尾；個人走完全程後離隊，下一位從第一行重新出發，直至 11 人皆通關。</li>
           <li><strong>每步限時</strong>：站在任一格後須 3 秒內選下一步；逾時視同猜錯。</li>
-          <li><strong>計時</strong>：首次點格後倒數 25 分鐘；25 分鐘後會響警報。</li>
-          <li><strong>違規加罰</strong>：計時旁「＋／−」每次加減 30 秒（發聲、未直線排隊等）；加罰即從剩餘時間扣除。</li>
+          <li><strong>計時</strong>：首次點格後開始正計時；全組通關或按「停止計時」記錄總用時。</li>
+          <li><strong>違規加罰</strong>：計時旁「＋／−」每次加減 10 秒（發聲、未直線排隊等）；加罰計入總用時。</li>
           <li><strong>格子標記</strong>：點選後顯示該隊員顏色小人及代號；正確為綠格，錯誤會響起警報並顯示 ✕ ；通關時播放成功音效。</li>
           <li><strong>成績紀錄</strong>：自動記錄每次<strong>參與</strong>及當中的每次<strong>猜測</strong>（✓／✕ 及格子編號）。</li>
           <li>導師專用：連續點擊頁面<strong>右下角 5 次</strong>，可顯示「顯示／隱藏路線」（建議留待檢討或示範後使用）。</li>
@@ -1290,7 +1305,7 @@
     const PATH_LENGTH = 12;
     const FAIL_DISPLAY_MS = 3000;
     const STEP_LIMIT_MS = 3000;
-    const FAIL_ALARM_PLAY_MS = 2000;
+    const FAIL_ALARM_PLAY_MS = 3000;
 
     const ROUTES = [
       // 12 cells; identical Πdeg = 1769472 → exact blind-success P = 1/8847360
@@ -1364,7 +1379,6 @@
     let pathVisible = false;
     let inputLocked = false;
     let completed = false;
-    let timedOut = false;
     let queue = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K"];
     let passedMembers = new Set();
     let failTimerId = null;
@@ -1397,21 +1411,21 @@
     let adminUnlockTimerId = null;
     const ADMIN_UNLOCK_CLICKS = 5;
     const ADMIN_UNLOCK_RESET_MS = 4000;
-    const GAME_LIMIT_MS = 25 * 60 * 1000;
     const PASS_HOLD_MS = 1800;
-    const TIMER_URGENT_MS = 60 * 1000;
 
     /** True once a route is selected (URL param or dropdown) */
     let routeReady = false;
     let teamNumber = null;
 
-    /** 25-minute countdown (starts on first valid cell click) */
-    let timerStarted = false;
-    let timerEndsAt = null;
+    /** Elapsed timer (starts on first valid cell click) */
+    let elapsedStarted = false;
+    let elapsedStartedAt = null;
+    let elapsedStopped = false;
+    let elapsedStoppedAt = null;
     let timerIntervalId = null;
-    /** Accumulated penalty deducted from remaining time (ms) */
+    /** Accumulated penalty added to total elapsed time (ms) */
     let penaltyMs = 0;
-    const PENALTY_STEP_MS = 30 * 1000;
+    const PENALTY_STEP_MS = 10 * 1000;
 
     const gridEl = document.getElementById("grid");
     const colLabelsEl = document.getElementById("colLabels");
@@ -1431,22 +1445,19 @@
     const penaltyDisplayEl = document.getElementById("penaltyDisplay");
     const penaltyPlusBtn = document.getElementById("penaltyPlusBtn");
     const penaltyMinusBtn = document.getElementById("penaltyMinusBtn");
+    const stopTimerBtn = document.getElementById("stopTimerBtn");
     const adminUnlockZone = document.getElementById("adminUnlockZone");
     const cellButtons = [];
 
-    /** Fail / success / time-up soundtracks */
+    /** Fail / success soundtracks */
     const FAIL_ALARM_SRC = "fail-alarm.mp3";
     const SUCCESS_CHIME_SRC = "success-chime.mp3";
-    const TIMEUP_ALARM_SRC = "timeup-alarm.mp3";
     const failAlarmAudio = new Audio(FAIL_ALARM_SRC);
     const successChimeAudio = new Audio(SUCCESS_CHIME_SRC);
-    const timeupAlarmAudio = new Audio(TIMEUP_ALARM_SRC);
     failAlarmAudio.preload = "auto";
     successChimeAudio.preload = "auto";
-    timeupAlarmAudio.preload = "auto";
     failAlarmAudio.volume = 1;
     successChimeAudio.volume = 1;
-    timeupAlarmAudio.volume = 1;
 
     function primeAudio(audio) {
       const prevVol = audio.volume;
@@ -1470,14 +1481,12 @@
     function unlockAudio() {
       primeAudio(failAlarmAudio);
       primeAudio(successChimeAudio);
-      primeAudio(timeupAlarmAudio);
     }
 
     function playAudioClip(audio) {
       try {
         failAlarmAudio.pause();
         successChimeAudio.pause();
-        timeupAlarmAudio.pause();
         audio.pause();
         audio.currentTime = 0;
         audio.volume = 1;
@@ -1505,10 +1514,6 @@
       playAudioClip(successChimeAudio);
     }
 
-    function playTimeupAlarm() {
-      playAudioClip(timeupAlarmAudio);
-    }
-
     function stopStepTimer() {
       if (stepTimerId !== null) {
         window.clearTimeout(stepTimerId);
@@ -1526,7 +1531,6 @@
       if (
         stepDeadlineAt === null ||
         completed ||
-        timedOut ||
         inputLocked ||
         pathIndex < 0 ||
         !playerPosition
@@ -1553,7 +1557,7 @@
 
     function startStepTimer() {
       stopStepTimer();
-      if (completed || timedOut || inputLocked || pathIndex < 0 || !playerPosition) {
+      if (completed || inputLocked || pathIndex < 0 || !playerPosition) {
         return;
       }
 
@@ -1575,7 +1579,7 @@
         stepIntervalId = null;
       }
 
-      if (completed || timedOut || inputLocked || !playerPosition) {
+      if (completed || inputLocked || !playerPosition) {
         stopStepTimer();
         return;
       }
@@ -1585,9 +1589,13 @@
     }
 
     function formatTimer(ms) {
-      const totalSec = Math.max(0, Math.ceil(ms / 1000));
-      const m = Math.floor(totalSec / 60);
+      const totalSec = Math.max(0, Math.floor(ms / 1000));
+      const h = Math.floor(totalSec / 3600);
+      const m = Math.floor((totalSec % 3600) / 60);
       const s = totalSec % 60;
+      if (h > 0) {
+        return `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+      }
       return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
     }
 
@@ -1607,21 +1615,20 @@
       penaltyDisplayEl.classList.toggle("has-penalty", penaltyMs > 0);
     }
 
-    function getRemainingMs() {
-      if (timerStarted && timerEndsAt !== null) {
-        return timerEndsAt - Date.now();
+    function getElapsedMs() {
+      if (!elapsedStarted || elapsedStartedAt === null) {
+        return penaltyMs;
       }
-      return GAME_LIMIT_MS - penaltyMs;
+      const endAt = elapsedStopped && elapsedStoppedAt !== null ? elapsedStoppedAt : Date.now();
+      return Math.max(0, endAt - elapsedStartedAt + penaltyMs);
     }
 
     function updateTimerDisplay() {
-      const remaining = getRemainingMs();
-      timerDisplayEl.textContent = formatTimer(remaining);
-      timerDisplayEl.classList.toggle(
-        "urgent",
-        timerStarted && remaining > 0 && remaining <= TIMER_URGENT_MS
-      );
-      timerDisplayEl.classList.toggle("expired", remaining <= 0 || timedOut);
+      timerDisplayEl.textContent = formatTimer(getElapsedMs());
+      timerDisplayEl.classList.toggle("stopped", elapsedStopped);
+      if (stopTimerBtn) {
+        stopTimerBtn.disabled = !elapsedStarted || elapsedStopped;
+      }
     }
 
     function stopTimerInterval() {
@@ -1633,64 +1640,54 @@
 
     function resetTimerState() {
       stopTimerInterval();
-      timerStarted = false;
-      timerEndsAt = null;
-      timedOut = false;
+      elapsedStarted = false;
+      elapsedStartedAt = null;
+      elapsedStopped = false;
+      elapsedStoppedAt = null;
       penaltyMs = 0;
       updatePenaltyDisplay();
       updateTimerDisplay();
     }
 
-    function handleTimeUp() {
-      if (timedOut || completed) return;
-      stopStepTimer();
-      timedOut = true;
-      inputLocked = true;
+    function stopElapsedTimer(options = {}) {
+      if (!elapsedStarted || elapsedStopped) return;
+      elapsedStopped = true;
+      elapsedStoppedAt = Date.now();
       stopTimerInterval();
       updateTimerDisplay();
-      playTimeupAlarm();
-      setStatus("時間到！25 分鐘已完結。全組停止猜測。", "fail");
-      renderBoard();
+      if (!options.silent) {
+        setStatus(
+          `計時已停止。總用時 ${formatTimer(getElapsedMs())}（含加罰 ${formatPenalty(penaltyMs)}）。`,
+          "success"
+        );
+      }
     }
 
     function startGameTimerIfNeeded() {
-      if (timerStarted || timedOut || completed) return;
-      timerStarted = true;
-      timerEndsAt = Date.now() + GAME_LIMIT_MS - penaltyMs;
+      if (elapsedStarted || completed) return;
+      elapsedStarted = true;
+      elapsedStartedAt = Date.now();
+      elapsedStopped = false;
+      elapsedStoppedAt = null;
       updateTimerDisplay();
       stopTimerInterval();
-      timerIntervalId = window.setInterval(() => {
-        updateTimerDisplay();
-        if (timerEndsAt !== null && Date.now() >= timerEndsAt) {
-          handleTimeUp();
-        }
-      }, 250);
+      timerIntervalId = window.setInterval(updateTimerDisplay, 250);
     }
 
     function applyPenaltyDelta(deltaMs) {
-      if (completed || timedOut) return;
-
       const nextPenalty = penaltyMs + deltaMs;
       if (nextPenalty < 0) return;
 
       penaltyMs = nextPenalty;
-      if (timerStarted && timerEndsAt !== null) {
-        timerEndsAt -= deltaMs;
-      }
-
       updatePenaltyDisplay();
       updateTimerDisplay();
 
       if (deltaMs > 0) {
-        setStatus(`違規加罰 +30 秒（累計 ${formatPenalty(penaltyMs)}）。`, "fail");
+        setStatus(`違規加罰 +10 秒（累計 ${formatPenalty(penaltyMs)}）。`, "fail");
       } else if (penaltyMs === 0) {
-        setStatus(`已取消加罰。剩餘時間已還原。`);
+        setStatus("已取消加罰。");
       } else {
         setStatus(`已調整加罰（累計 ${formatPenalty(penaltyMs)}）。`);
-      }
-
-      if (timerStarted && timerEndsAt !== null && Date.now() >= timerEndsAt) {
-        handleTimeUp();
       }
     }
 
@@ -1825,11 +1822,8 @@
       if (!routeReady) {
         return "請先選擇本組路線（與活動主持抽籤結果一致）。";
       }
-      if (timedOut) {
-        return "時間到！25 分鐘已完結。全組停止猜測。";
-      }
       if (completed) {
-        return `全組通關！${ALL_MEMBERS.length} 人均已到達終點。`;
+        return `全組通關！${ALL_MEMBERS.length} 人均已到達終點。總用時 ${formatTimer(getElapsedMs())}。`;
       }
       const member = currentMember();
       if (!member) {
@@ -2070,7 +2064,7 @@
             btn.classList.add("path-hint");
           }
 
-          btn.disabled = completed || timedOut || inputLocked;
+          btn.disabled = completed || inputLocked;
         }
       }
     }
@@ -2095,7 +2089,7 @@
         setStatus(defaultPrompt());
         return;
       }
-      if (inputLocked || completed || timedOut) return;
+      if (inputLocked || completed) return;
       if (!isAttemptable(col, row)) return;
 
       stopStepTimer();
@@ -2154,13 +2148,13 @@
         if (passedMembers.size >= ALL_MEMBERS.length || queue.length === 0) {
           completed = true;
           inputLocked = true;
-          stopTimerInterval();
+          stopElapsedTimer({ silent: true });
           playSuccessChime();
           renderQueue();
           renderBoard();
           renderScoreboard();
           setStatus(
-            `全組通關！${ALL_MEMBERS.length} 人均已到達終點。`,
+            `全組通關！${ALL_MEMBERS.length} 人均已到達終點。總用時 ${formatTimer(getElapsedMs())}（含加罰 ${formatPenalty(penaltyMs)}）。`,
             "success"
           );
           return;
@@ -2181,7 +2175,7 @@
     }
 
     function failAndReset(col, row, options = {}) {
-      if (timedOut || completed) return;
+      if (completed) return;
       stopStepTimer();
       inputLocked = true;
       const missedMember = currentMember();
@@ -2210,12 +2204,12 @@
         failTimerId = null;
         pathIndex = -1;
         clearRunProgress();
-        inputLocked = timedOut || completed;
+        inputLocked = completed;
         btn.classList.remove("fail");
         failPosition = null;
         failMember = null;
 
-        if (!timedOut && !completed) {
+        if (!completed) {
           rotateQueueAfterMiss();
           renderQueue();
           renderBoard();
@@ -2238,9 +2232,10 @@
       if (pathVisible) {
         setStatus(`路線 ${routeIndex + 1} 已顯示（黃色）。再按一次可隱藏。`);
       } else if (completed) {
-        setStatus(`全組通關！${ALL_MEMBERS.length} 人均已到達終點。`, "success");
-      } else if (timedOut) {
-        setStatus("時間到！25 分鐘已完結。全組停止猜測。", "fail");
+        setStatus(
+          `全組通關！${ALL_MEMBERS.length} 人均已到達終點。總用時 ${formatTimer(getElapsedMs())}。`,
+          "success"
+        );
       } else if (pathIndex < 0) {
         setStatus(defaultPrompt());
       } else {
@@ -2396,6 +2391,7 @@
     resetBtn.addEventListener("click", resetGame);
     penaltyPlusBtn.addEventListener("click", () => applyPenaltyDelta(PENALTY_STEP_MS));
     penaltyMinusBtn.addEventListener("click", () => applyPenaltyDelta(-PENALTY_STEP_MS));
+    stopTimerBtn.addEventListener("click", () => stopElapsedTimer());
     routeSelect.addEventListener("change", () => {
       const value = routeSelect.value;
       if (value === "") return;
