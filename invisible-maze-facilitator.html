@@ -158,16 +158,20 @@
       gap: 0.45rem;
     }
 
-    .stop-timer-btn {
+    .penalty-btn.stop-timer-btn {
       width: auto;
-      min-width: 4.2rem;
-      padding: 0 0.45rem;
-      font-size: 0.64rem;
+      min-width: 1.85rem;
+      height: 1.55rem;
+      padding: 0 0.32rem;
+      font-size: 0.62rem;
       font-weight: 700;
-      letter-spacing: 0.02em;
+      letter-spacing: 0;
+      line-height: 1;
+      white-space: nowrap;
+      flex-shrink: 0;
     }
 
-    .stop-timer-btn:disabled {
+    .penalty-btn.stop-timer-btn:disabled {
       opacity: 0.45;
       cursor: default;
       transform: none;
@@ -357,6 +361,30 @@
 
     .member.active .member-tag {
       display: inline;
+    }
+
+    .member.waiting {
+      background: #eef1f5;
+      border-color: #cbd5e1;
+      opacity: 0.72;
+    }
+
+    .member.waiting .member-id {
+      color: var(--muted);
+    }
+
+    .member.waiting .member-tag {
+      display: inline;
+      color: var(--muted);
+    }
+
+    .queue-phase-divider {
+      align-self: center;
+      font-size: 0.62rem;
+      font-weight: 700;
+      color: var(--muted);
+      padding: 0 0.15rem;
+      flex-shrink: 0;
     }
 
     /* ---------- Board ---------- */
@@ -967,6 +995,19 @@
       color: #15803d;
     }
 
+    .score-card.waiting {
+      background: #eef1f5;
+      border-color: #cbd5e1;
+      opacity: 0.85;
+    }
+
+    .score-card.waiting .score-card-id::after {
+      content: " 等候";
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--muted);
+    }
+
     .score-card-head {
       display: flex;
       align-items: center;
@@ -1167,7 +1208,7 @@
           <div class="meta-item timer-meta">
             <span class="meta-label">用時：</span>
             <strong id="timerDisplay" class="timer-display">00:00</strong>
-            <button type="button" id="stopTimerBtn" class="penalty-btn stop-timer-btn" disabled>停止計時</button>
+            <button type="button" id="stopTimerBtn" class="penalty-btn stop-timer-btn" aria-label="停止計時" disabled>停止</button>
             <div class="penalty-controls" aria-label="違規加罰">
               <button type="button" id="penaltyMinusBtn" class="penalty-btn" aria-label="減少加罰 10 秒">−</button>
               <span id="penaltyDisplay" class="penalty-display">+0:00</span>
@@ -1228,7 +1269,8 @@
       <div class="rules-title">遊戲規則</div>
       <ul class="rules-list">
         <li>格子以<strong>欄 A–E</strong>（左至右）、<strong>行 1–7</strong>（底至頂）標示。</li>
-        <li>每組 <strong>11</strong> 位隊員（<strong>A–K</strong>）<strong>單行輪候</strong>，只有最前方者負責猜測。</li>
+        <li>每組 <strong>11</strong> 位隊員（<strong>A–K</strong>）分兩階段：<strong>A–F 先玩</strong>，<strong>G–K 等候</strong>；待 A–F 全數通關後，G–K 才開始。</li>
+        <li>各階段內<strong>單行輪候</strong>，只有最前方者負責猜測。</li>
         <li>隊員必須<strong>直線單行排隊</strong>；未依規定排隊每次加罰 <strong>10 秒</strong>（與其他違規相同）。</li>
         <li>第一步：可選<strong>底行任意一格</strong>（選錯入口也算失敗）。</li>
         <li>之後：只能選與現位置<strong>上下左右相鄰</strong>的格子。</li>
@@ -1270,7 +1312,8 @@
 
         <h3>三、進行中操作</h3>
         <ul>
-          <li><strong>單行輪候</strong>：只有最前方隊員（A–K）負責猜測；猜對可繼續，猜錯或逾時則排到隊尾；個人走完全程後離隊，下一位從第一行重新出發，直至 11 人皆通關。</li>
+          <li><strong>兩階段</strong>：A–F 先完成全程；G–K 等候至 A–F 全通關後才開始。</li>
+          <li><strong>單行輪候</strong>：各階段內只有最前方隊員負責猜測；猜對可繼續，猜錯或逾時則排到隊尾；個人走完全程後離隊，下一位從第一行重新出發，直至 11 人皆通關。</li>
           <li><strong>每步限時</strong>：站在任一格後須 3 秒內選下一步；逾時視同猜錯。</li>
           <li><strong>計時</strong>：首次點格後開始正計時；全組通關或按「停止計時」記錄總用時。</li>
           <li><strong>違規加罰</strong>：計時旁「＋／−」每次加減 10 秒（發聲、未直線排隊等）；加罰計入總用時。</li>
@@ -1305,7 +1348,7 @@
     const PATH_LENGTH = 12;
     const FAIL_DISPLAY_MS = 3000;
     const STEP_LIMIT_MS = 3000;
-    const FAIL_ALARM_PLAY_MS = 3000;
+    const FAIL_ALARM_PLAY_MS = 2600;
 
     const ROUTES = [
       // 12 cells; identical Πdeg = 1769472 → exact blind-success P = 1/8847360
@@ -1370,6 +1413,8 @@
     ];
 
     const ALL_MEMBERS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K"];
+    const PHASE1_MEMBERS = ["A", "B", "C", "D", "E", "F"];
+    const PHASE2_MEMBERS = ["G", "H", "I", "J", "K"];
 
     /** Grid column letters (A = left) */
     const COL_LABELS = ["A", "B", "C", "D", "E"];
@@ -1379,7 +1424,9 @@
     let pathVisible = false;
     let inputLocked = false;
     let completed = false;
-    let queue = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K"];
+    let phase2Started = false;
+    let queue = [...PHASE1_MEMBERS];
+    let waitingMembers = [...PHASE2_MEMBERS];
     let passedMembers = new Set();
     let failTimerId = null;
     let passHoldTimerId = null;
@@ -1813,6 +1860,28 @@
       return queue.length ? queue[0] : null;
     }
 
+    function isPhase1Complete() {
+      return PHASE1_MEMBERS.every((id) => passedMembers.has(id));
+    }
+
+    function currentPhaseLabel() {
+      return phase2Started ? "第二階段 G–K" : "第一階段 A–F";
+    }
+
+    function resetQueueState() {
+      phase2Started = false;
+      queue = [...PHASE1_MEMBERS];
+      waitingMembers = [...PHASE2_MEMBERS];
+    }
+
+    function startPhase2IfReady() {
+      if (phase2Started || !isPhase1Complete()) return false;
+      phase2Started = true;
+      waitingMembers = [];
+      queue = PHASE2_MEMBERS.filter((id) => !passedMembers.has(id));
+      return queue.length > 0;
+    }
+
     function setStatus(message, tone = "") {
       statusEl.textContent = message;
       statusEl.className = "status" + (tone ? ` ${tone}` : "");
@@ -1827,9 +1896,12 @@
       }
       const member = currentMember();
       if (!member) {
+        if (!phase2Started && isPhase1Complete()) {
+          return "第一階段 A–F 已完成，準備開始第二階段 G–K。";
+        }
         return "輪候已空。";
       }
-      return `路線 ${routeIndex + 1} · 隊員 ${member} 輪到 — 請選底行任意一格。（已通關 ${passedMembers.size}/${ALL_MEMBERS.length}）`;
+      return `路線 ${routeIndex + 1} · ${currentPhaseLabel()} · 隊員 ${member} 輪到 — 請選底行任意一格。（已通關 ${passedMembers.size}/${ALL_MEMBERS.length}）`;
     }
 
     function continuePrompt() {
@@ -1951,9 +2023,10 @@
     function renderQueue() {
       queueEl.innerHTML = "";
       const member = currentMember();
+      const phaseNote = currentPhaseLabel();
       queueNowEl.innerHTML = member
-        ? `現正猜測：<strong>${member}</strong> · 已通關 ${passedMembers.size}/${ALL_MEMBERS.length}`
-        : `已通關 ${passedMembers.size}/${ALL_MEMBERS.length}`;
+        ? `現正猜測：<strong>${member}</strong> · ${phaseNote} · 已通關 ${passedMembers.size}/${ALL_MEMBERS.length}`
+        : `${phaseNote} · 已通關 ${passedMembers.size}/${ALL_MEMBERS.length}`;
       updatePassedDisplay();
 
       queue.forEach((id, index) => {
@@ -1969,6 +2042,28 @@
         `;
         queueEl.appendChild(item);
       });
+
+      if (waitingMembers.length) {
+        const divider = document.createElement("span");
+        divider.className = "queue-phase-divider";
+        divider.textContent = "｜";
+        divider.setAttribute("aria-hidden", "true");
+        queueEl.appendChild(divider);
+
+        waitingMembers.forEach((id) => {
+          const colorIndex = id.charCodeAt(0) - "A".charCodeAt(0);
+          const color = MEMBER_COLORS[colorIndex] || MEMBER_COLORS[0];
+          const item = document.createElement("div");
+          item.className = "member waiting";
+          item.setAttribute("role", "listitem");
+          item.innerHTML = `
+            ${personSvg(color)}
+            <span class="member-id">${id}</span>
+            <span class="member-tag">等候中</span>
+          `;
+          queueEl.appendChild(item);
+        });
+      }
     }
 
     function renderScoreboard() {
@@ -1982,10 +2077,12 @@
         const wrongCount = allGuesses.filter((g) => !g.correct).length;
         const card = document.createElement("div");
         const hasPassed = passedMembers.has(id);
+        const isWaiting = waitingMembers.includes(id);
         card.className =
           "score-card" +
           (id === activeMember ? " active" : "") +
-          (hasPassed ? " passed" : "");
+          (hasPassed ? " passed" : "") +
+          (isWaiting ? " waiting" : "");
 
         let attemptsHtml = "";
         if (!attempts.length) {
@@ -2145,6 +2242,16 @@
         clearFailMarkers();
         inputLocked = false;
 
+        if (queue.length === 0 && startPhase2IfReady()) {
+          renderQueue();
+          renderBoard();
+          renderScoreboard();
+          setStatus(
+            `第一階段完成！A–F 皆已通關。第二階段開始 — 隊員 ${currentMember()} 輪到 — 請從底行重新開始。（已通關 ${passedMembers.size}/${ALL_MEMBERS.length}）`
+          );
+          return;
+        }
+
         if (passedMembers.size >= ALL_MEMBERS.length || queue.length === 0) {
           completed = true;
           inputLocked = true;
@@ -2264,7 +2371,7 @@
       inputLocked = false;
       pathVisible = false;
       passedMembers = new Set();
-      queue = [...ALL_MEMBERS];
+      resetQueueState();
       resetTimerState();
 
       clearFailMarkers();
@@ -2300,7 +2407,7 @@
       inputLocked = false;
       pathVisible = false;
       passedMembers = new Set();
-      queue = [...ALL_MEMBERS];
+      resetQueueState();
       resetMemberTracking();
       resetTimerState();
 
