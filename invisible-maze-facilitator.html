@@ -1276,7 +1276,7 @@
           </div>
           <div class="meta-item">
             <span class="meta-label">已通關：</span>
-            <strong id="passedDisplay">0 / 10</strong>
+            <strong id="passedDisplay">0 / 11</strong>
           </div>
         </div>
       </div>
@@ -1307,7 +1307,7 @@
 
     <section class="queue-line-wrap" aria-label="單行輪候排隊線">
       <div class="queue-line-head">
-        <span class="queue-title">單行輪候（10 人）</span>
+        <span class="queue-title">單行輪候（11 人）</span>
         <span id="queueNow" class="queue-now">現正猜測：<strong>A</strong></span>
       </div>
       <div class="queue-line-track">
@@ -1329,7 +1329,7 @@
       <div class="rules-title">遊戲規則</div>
       <ul class="rules-list">
         <li>格子以<strong>欄 A–E</strong>（左至右）、<strong>行 1–7</strong>（底至頂）標示。</li>
-        <li>每組 <strong>10</strong> 位隊員（<strong>A–J</strong>）分兩階段：<strong>A–E 先玩</strong>，<strong>F–J 等候</strong>；待 A–E 全數通關後，F–J 才開始。</li>
+        <li>每組 <strong>11</strong> 位隊員（<strong>A–K</strong>）分兩階段：<strong>A–F 先玩</strong>，<strong>G–K 等候</strong>；待 A–F 全數通關後，G–K 才開始。</li>
         <li>各階段內<strong>單行輪候</strong>，只有最前方者負責猜測。</li>
         <li>隊員必須<strong>直線單行排隊</strong>；未依規定排隊每次加罰 <strong>10 秒</strong>（與其他違規相同）。</li>
         <li>第一步：可選<strong>底行任意一格</strong>（選錯入口也算失敗）。</li>
@@ -1337,7 +1337,7 @@
         <li>猜對 <strong>✓</strong>：該隊員繼續猜，進度保留。</li>
         <li>猜錯 <strong>✕</strong> 或<strong>逾時</strong>：顯示 3 秒，進度清零，該隊員排到<strong>隊尾</strong>。</li>
         <li>每步限時：站在任一格後須於 <strong>3 秒</strong>內選下一步；逾時視同猜錯。</li>
-        <li>一人走完全程僅算<strong>個人通關</strong>；須<strong>全組 10 人</strong>皆通關才算完成。</li>
+        <li>一人走完全程僅算<strong>個人通關</strong>；須<strong>全組 11 人</strong>皆通關才算完成。</li>
         <li>
           <strong>禁言與違規：</strong>
           <ul>
@@ -1358,9 +1358,9 @@
         <ol>
           <li>活動主持已在<strong>簡報版</strong>為兩組公開抽籤；請向活動主持確認<strong>本組路線編號</strong>。</li>
           <li>開啟本頁後，於「本組路線」選擇對應編號。</li>
-          <li>向每位隊員派發紙卡，寫上字母 <strong>A</strong> 至 <strong>J</strong>，以標示個人代號。</li>
+          <li>向每位隊員派發紙卡，寫上字母 <strong>A</strong> 至 <strong>K</strong>，以標示個人代號。</li>
           <li>以<strong>單一螢幕</strong>由導師操作；隊員在實體地格上進行，活動期間不宜各自用手機開啟此頁。</li>
-          <li>確認實體地格與螢幕一致：欄 <strong>A–E</strong>（左至右）、行 <strong>1–7</strong>（底至頂）；10 人<strong>單行排隊</strong>。</li>
+          <li>確認實體地格與螢幕一致：欄 <strong>A–E</strong>（左至右）、行 <strong>1–7</strong>（底至頂）；11 人<strong>單行排隊</strong>。</li>
         </ol>
 
         <h3>二、每組開始流程</h3>
@@ -1372,8 +1372,8 @@
 
         <h3>三、進行中操作</h3>
         <ul>
-          <li><strong>兩階段</strong>：A–E 先完成全程；F–J 等候至 A–E 全通關後才開始。</li>
-          <li><strong>單行輪候</strong>：各階段內只有最前方隊員負責猜測；猜對可繼續，猜錯或逾時則排到隊尾；個人走完全程後離隊，下一位從第一行重新出發，直至 10 人皆通關。</li>
+          <li><strong>兩階段</strong>：A–F 先完成全程；G–K 等候至 A–F 全通關後才開始。</li>
+          <li><strong>單行輪候</strong>：各階段內只有最前方隊員負責猜測；猜對可繼續，猜錯或逾時則排到隊尾；個人走完全程後離隊，下一位從第一行重新出發，直至 11 人皆通關。</li>
           <li><strong>每步限時</strong>：站在任一格後須 3 秒內選下一步；逾時視同猜錯。</li>
           <li><strong>計時</strong>：首次點格後開始正計時；全組通關或按「停止計時」記錄總用時。</li>
           <li><strong>違規加罰</strong>：計時旁「＋／−」每次加減 10 秒（發聲、未直線排隊等）；加罰計入總用時。</li>
@@ -1467,9 +1467,9 @@
       "#a21caf", "#0e7490", "#c2410c",
     ];
 
-    const ALL_MEMBERS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"];
-    const PHASE1_MEMBERS = ["A", "B", "C", "D", "E"];
-    const PHASE2_MEMBERS = ["F", "G", "H", "I", "J"];
+    const ALL_MEMBERS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K"];
+    const PHASE1_MEMBERS = ["A", "B", "C", "D", "E", "F"];
+    const PHASE2_MEMBERS = ["G", "H", "I", "J", "K"];
 
     /** Grid column letters (A = left) */
     const COL_LABELS = ["A", "B", "C", "D", "E"];
@@ -1925,7 +1925,7 @@
     }
 
     function currentPhaseLabel() {
-      return phase2Started ? "第二階段 F–J" : "第一階段 A–E";
+      return phase2Started ? "第二階段 G–K" : "第一階段 A–F";
     }
 
     function resetQueueState() {
@@ -1957,7 +1957,7 @@
       const member = currentMember();
       if (!member) {
         if (!phase2Started && isPhase1Complete()) {
-          return "第一階段 A–E 已完成，準備開始第二階段 F–J。";
+          return "第一階段 A–F 已完成，準備開始第二階段 G–K。";
         }
         return "輪候已空。";
       }
@@ -2309,7 +2309,7 @@
           renderBoard();
           renderScoreboard();
           setStatus(
-            `第一階段完成！A–E 皆已通關。第二階段開始 — 隊員 ${currentMember()} 輪到 — 請從底行重新開始。（已通關 ${passedMembers.size}/${ALL_MEMBERS.length}）`
+            `第一階段完成！A–F 皆已通關。第二階段開始 — 隊員 ${currentMember()} 輪到 — 請從底行重新開始。（已通關 ${passedMembers.size}/${ALL_MEMBERS.length}）`
           );
           return;
         }
