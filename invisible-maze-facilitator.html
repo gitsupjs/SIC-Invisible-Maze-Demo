@@ -368,6 +368,23 @@
     .status.success { color: #15803d; }
     .status.fail { color: #b91c1c; }
 
+    .step-display {
+      min-height: 1.1rem;
+      font-size: 0.82rem;
+      font-weight: 700;
+      text-align: center;
+      color: var(--brand-orange);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .step-display.urgent {
+      color: #b91c1c;
+    }
+
+    .step-display[hidden] {
+      display: none;
+    }
+
     .board-grid-area {
       display: grid;
       grid-template-columns: auto 1fr;
@@ -1152,6 +1169,7 @@
 
     <div class="board-wrap">
       <p id="status" class="status" aria-live="polite">隊員 A 輪到 — 請選底行任意一格。</p>
+      <p id="stepDisplay" class="step-display" hidden aria-live="polite"></p>
       <div class="board-grid-area">
         <div class="grid-corner" aria-hidden="true"></div>
         <div id="colLabels" class="col-labels" aria-hidden="true"></div>
@@ -1200,7 +1218,8 @@
         <li>第一步：可選<strong>底行任意一格</strong>（選錯入口也算失敗）。</li>
         <li>之後：只能選與現位置<strong>上下左右相鄰</strong>的格子。</li>
         <li>猜對 <strong>✓</strong>：該隊員繼續猜，進度保留。</li>
-        <li>猜錯 <strong>✕</strong>：顯示 3 秒，進度清零，該隊員排到<strong>隊尾</strong>。</li>
+        <li>猜錯 <strong>✕</strong> 或<strong>逾時</strong>：顯示 3 秒，進度清零，該隊員排到<strong>隊尾</strong>。</li>
+        <li>每步限時：站在任一格後須於 <strong>3 秒</strong>內選下一步；逾時視同猜錯。</li>
         <li>一人走完全程僅算<strong>個人通關</strong>；須<strong>全組 11 人</strong>皆通關才算完成。</li>
         <li>
           <strong>禁言與違規：</strong>
@@ -1236,7 +1255,8 @@
 
         <h3>三、進行中操作</h3>
         <ul>
-          <li><strong>單行輪候</strong>：只有最前方隊員（A–K）負責猜測；猜對可繼續，猜錯則排到隊尾；個人走完全程後離隊，下一位從第一行重新出發，直至 11 人皆通關。</li>
+          <li><strong>單行輪候</strong>：只有最前方隊員（A–K）負責猜測；猜對可繼續，猜錯或逾時則排到隊尾；個人走完全程後離隊，下一位從第一行重新出發，直至 11 人皆通關。</li>
+          <li><strong>每步限時</strong>：站在任一格後須 3 秒內選下一步；逾時視同猜錯。</li>
           <li><strong>計時</strong>：首次點格後倒數 25 分鐘；25 分鐘後會響警報。</li>
           <li><strong>違規加罰</strong>：計時旁「＋／−」每次加減 30 秒（發聲、未直線排隊等）；加罰即從剩餘時間扣除。</li>
           <li><strong>格子標記</strong>：點選後顯示該隊員顏色小人及代號；正確為綠格，錯誤會響起警報並顯示 ✕ ；通關時播放成功音效。</li>
@@ -1269,6 +1289,8 @@
     const ROWS = 7;
     const PATH_LENGTH = 12;
     const FAIL_DISPLAY_MS = 3000;
+    const STEP_LIMIT_MS = 3000;
+    const FAIL_ALARM_PLAY_MS = 2000;
 
     const ROUTES = [
       // 12 cells; identical Πdeg = 1769472 → exact blind-success P = 1/8847360
@@ -1347,6 +1369,10 @@
     let passedMembers = new Set();
     let failTimerId = null;
     let passHoldTimerId = null;
+    let stepTimerId = null;
+    let stepIntervalId = null;
+    let stepDeadlineAt = null;
+    let failAlarmStopId = null;
 
     /** Current player standing position on the grid; null = off the board */
     let playerPosition = null;
@@ -1391,6 +1417,7 @@
     const colLabelsEl = document.getElementById("colLabels");
     const rowLabelsEl = document.getElementById("rowLabels");
     const statusEl = document.getElementById("status");
+    const stepDisplayEl = document.getElementById("stepDisplay");
     const queueEl = document.getElementById("queue");
     const queueNowEl = document.getElementById("queueNow");
     const scoreboardEl = document.getElementById("scoreboard");
@@ -1407,21 +1434,17 @@
     const adminUnlockZone = document.getElementById("adminUnlockZone");
     const cellButtons = [];
 
-    /** Fail / correct / success / time-up soundtracks */
+    /** Fail / success / time-up soundtracks */
     const FAIL_ALARM_SRC = "fail-alarm.mp3";
-    const CORRECT_CHIME_SRC = "correct-chime.mp3";
     const SUCCESS_CHIME_SRC = "success-chime.mp3";
     const TIMEUP_ALARM_SRC = "timeup-alarm.mp3";
     const failAlarmAudio = new Audio(FAIL_ALARM_SRC);
-    const correctChimeAudio = new Audio(CORRECT_CHIME_SRC);
     const successChimeAudio = new Audio(SUCCESS_CHIME_SRC);
     const timeupAlarmAudio = new Audio(TIMEUP_ALARM_SRC);
     failAlarmAudio.preload = "auto";
-    correctChimeAudio.preload = "auto";
     successChimeAudio.preload = "auto";
     timeupAlarmAudio.preload = "auto";
     failAlarmAudio.volume = 1;
-    correctChimeAudio.volume = 1;
     successChimeAudio.volume = 1;
     timeupAlarmAudio.volume = 1;
 
@@ -1446,7 +1469,6 @@
 
     function unlockAudio() {
       primeAudio(failAlarmAudio);
-      primeAudio(correctChimeAudio);
       primeAudio(successChimeAudio);
       primeAudio(timeupAlarmAudio);
     }
@@ -1454,7 +1476,6 @@
     function playAudioClip(audio) {
       try {
         failAlarmAudio.pause();
-        correctChimeAudio.pause();
         successChimeAudio.pause();
         timeupAlarmAudio.pause();
         audio.pause();
@@ -1471,10 +1492,13 @@
 
     function playFailAlarm() {
       playAudioClip(failAlarmAudio);
-    }
-
-    function playCorrectChime() {
-      playAudioClip(correctChimeAudio);
+      if (failAlarmStopId !== null) {
+        window.clearTimeout(failAlarmStopId);
+      }
+      failAlarmStopId = window.setTimeout(() => {
+        failAlarmAudio.pause();
+        failAlarmStopId = null;
+      }, FAIL_ALARM_PLAY_MS);
     }
 
     function playSuccessChime() {
@@ -1483,6 +1507,81 @@
 
     function playTimeupAlarm() {
       playAudioClip(timeupAlarmAudio);
+    }
+
+    function stopStepTimer() {
+      if (stepTimerId !== null) {
+        window.clearTimeout(stepTimerId);
+        stepTimerId = null;
+      }
+      if (stepIntervalId !== null) {
+        window.clearInterval(stepIntervalId);
+        stepIntervalId = null;
+      }
+      stepDeadlineAt = null;
+      updateStepDisplay();
+    }
+
+    function updateStepDisplay() {
+      if (
+        stepDeadlineAt === null ||
+        completed ||
+        timedOut ||
+        inputLocked ||
+        pathIndex < 0 ||
+        !playerPosition
+      ) {
+        stepDisplayEl.hidden = true;
+        stepDisplayEl.textContent = "";
+        stepDisplayEl.classList.remove("urgent");
+        return;
+      }
+
+      const remaining = stepDeadlineAt - Date.now();
+      if (remaining <= 0) {
+        stepDisplayEl.hidden = true;
+        stepDisplayEl.textContent = "";
+        stepDisplayEl.classList.remove("urgent");
+        return;
+      }
+
+      const sec = Math.ceil(remaining / 1000);
+      stepDisplayEl.hidden = false;
+      stepDisplayEl.textContent = `本步限時：${sec} 秒`;
+      stepDisplayEl.classList.toggle("urgent", remaining <= 1000);
+    }
+
+    function startStepTimer() {
+      stopStepTimer();
+      if (completed || timedOut || inputLocked || pathIndex < 0 || !playerPosition) {
+        return;
+      }
+
+      const path = getHiddenPath();
+      if (pathIndex >= path.length - 1) {
+        return;
+      }
+
+      stepDeadlineAt = Date.now() + STEP_LIMIT_MS;
+      stepTimerId = window.setTimeout(handleStepTimeout, STEP_LIMIT_MS);
+      stepIntervalId = window.setInterval(updateStepDisplay, 100);
+      updateStepDisplay();
+    }
+
+    function handleStepTimeout() {
+      stepTimerId = null;
+      if (stepIntervalId !== null) {
+        window.clearInterval(stepIntervalId);
+        stepIntervalId = null;
+      }
+
+      if (completed || timedOut || inputLocked || !playerPosition) {
+        stopStepTimer();
+        return;
+      }
+
+      const { col, row } = playerPosition;
+      failAndReset(col, row, { reason: "timeout" });
     }
 
     function formatTimer(ms) {
@@ -1544,6 +1643,7 @@
 
     function handleTimeUp() {
       if (timedOut || completed) return;
+      stopStepTimer();
       timedOut = true;
       inputLocked = true;
       stopTimerInterval();
@@ -1739,7 +1839,7 @@
     }
 
     function continuePrompt() {
-      return `猜對 ✓ — 隊員 ${currentMember()} 繼續猜測。`;
+      return `猜對 ✓ — 隊員 ${currentMember()} 繼續猜測（3 秒內須選下一步）。`;
     }
 
     function setTeamMeta(team) {
@@ -1998,6 +2098,7 @@
       if (inputLocked || completed || timedOut) return;
       if (!isAttemptable(col, row)) return;
 
+      stopStepTimer();
       startGameTimerIfNeeded();
 
       const path = getHiddenPath();
@@ -2016,8 +2117,8 @@
         if (pathIndex === path.length - 1) {
           handleMemberPassed(member);
         } else {
-          playCorrectChime();
           setStatus(continuePrompt(), "success");
+          startStepTimer();
         }
         return;
       }
@@ -2026,6 +2127,7 @@
     }
 
     function handleMemberPassed(memberId) {
+      stopStepTimer();
       inputLocked = true;
       passedMembers.add(memberId);
       playSuccessChime();
@@ -2078,15 +2180,17 @@
       queue.push(missed);
     }
 
-    function failAndReset(col, row) {
+    function failAndReset(col, row, options = {}) {
       if (timedOut || completed) return;
+      stopStepTimer();
       inputLocked = true;
       const missedMember = currentMember();
       playFailAlarm();
-      setStatus(
-        `隊員 ${missedMember} 猜錯！警報響起，顯示 ✕ 3 秒…`,
-        "fail"
-      );
+      const failMessage =
+        options.reason === "timeout"
+          ? `隊員 ${missedMember} 逾時！超過 3 秒未繼續，顯示 ✕ 3 秒…`
+          : `隊員 ${missedMember} 猜錯！警報響起，顯示 ✕ 3 秒…`;
+      setStatus(failMessage, "fail");
 
       failPosition = { col, row };
       failMember = missedMember;
@@ -2153,6 +2257,7 @@
         window.clearTimeout(passHoldTimerId);
         passHoldTimerId = null;
       }
+      stopStepTimer();
 
       routeReady = true;
       routeIndex = nextIndex;
@@ -2192,6 +2297,7 @@
         window.clearTimeout(passHoldTimerId);
         passHoldTimerId = null;
       }
+      stopStepTimer();
 
       pathIndex = -1;
       clearRunProgress();
