@@ -398,6 +398,14 @@
       gap: 0.75rem;
     }
 
+    .board-main {
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      gap: 0.85rem;
+      flex-wrap: wrap;
+    }
+
     .status {
       min-height: 1.4rem;
       font-size: 0.98rem;
@@ -534,6 +542,13 @@
       box-shadow: inset 0 0 0 3px var(--path-outline);
     }
 
+    .cell.path-hint .route-step-num {
+      font-size: clamp(0.76rem, 2.2vw, 0.95rem);
+      font-weight: 800;
+      color: #7c2d12;
+      line-height: 1;
+    }
+
     .cell.fail {
       background: var(--fail);
       color: #fff;
@@ -640,6 +655,40 @@
       flex-wrap: wrap;
       gap: 0.65rem;
       justify-content: center;
+    }
+
+    .controls.side-controls {
+      width: min(220px, 100%);
+      flex-direction: column;
+      flex-wrap: nowrap;
+      align-items: stretch;
+      justify-content: flex-start;
+      gap: 0.5rem;
+      margin-top: 0.1rem;
+    }
+
+    .controls.side-controls .route-picker {
+      width: 100%;
+      border-radius: 14px;
+      padding: 0.55rem 0.65rem;
+      display: grid;
+      gap: 0.35rem;
+    }
+
+    .controls.side-controls .route-picker label {
+      font-size: 0.8rem;
+    }
+
+    .controls.side-controls .route-picker select {
+      width: 100%;
+    }
+
+    .controls.side-controls .btn {
+      width: 100%;
+      border-radius: 14px;
+      padding: 0.7rem 0.9rem;
+      font-size: 0.88rem;
+      text-align: center;
     }
 
     .btn {
@@ -1172,6 +1221,16 @@
       .scoreboard-grid {
         grid-template-columns: repeat(auto-fill, minmax(4.2rem, 1fr));
       }
+
+      .board-main {
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .controls.side-controls {
+        width: 100%;
+        max-width: 460px;
+      }
     }
   </style>
 </head>
@@ -1217,7 +1276,7 @@
           </div>
           <div class="meta-item">
             <span class="meta-label">已通關：</span>
-            <strong id="passedDisplay">0 / 11</strong>
+            <strong id="passedDisplay">0 / 10</strong>
           </div>
         </div>
       </div>
@@ -1226,19 +1285,29 @@
     <div class="board-wrap">
       <p id="status" class="status" aria-live="polite">隊員 A 輪到 — 請選底行任意一格。</p>
       <p id="stepDisplay" class="step-display" hidden aria-live="polite"></p>
-      <div class="board-grid-area">
-        <div class="grid-corner" aria-hidden="true"></div>
-        <div id="colLabels" class="col-labels" aria-hidden="true"></div>
-        <div class="grid-with-rows">
-          <div id="rowLabels" class="row-labels" aria-hidden="true"></div>
-          <div id="grid" class="grid" role="grid" aria-label="隱形迷宮，欄 A–E，行 1–7（行 1 為底行）"></div>
+      <div class="board-main">
+        <div class="board-grid-area">
+          <div class="grid-corner" aria-hidden="true"></div>
+          <div id="colLabels" class="col-labels" aria-hidden="true"></div>
+          <div class="grid-with-rows">
+            <div id="rowLabels" class="row-labels" aria-hidden="true"></div>
+            <div id="grid" class="grid" role="grid" aria-label="隱形迷宮，欄 A–E，行 1–7（行 1 為底行）"></div>
+          </div>
+        </div>
+        <div class="controls side-controls">
+          <div class="route-picker">
+            <label for="routeSelect">本組路線</label>
+            <select id="routeSelect" aria-label="選擇本組已抽籤之路線"></select>
+          </div>
+          <button type="button" id="togglePathBtn" class="btn btn-primary admin-hidden" hidden>顯示／隱藏路線</button>
+          <button type="button" id="resetBtn" class="btn btn-secondary">重新開始</button>
         </div>
       </div>
     </div>
 
     <section class="queue-line-wrap" aria-label="單行輪候排隊線">
       <div class="queue-line-head">
-        <span class="queue-title">單行輪候（11 人）</span>
+        <span class="queue-title">單行輪候（10 人）</span>
         <span id="queueNow" class="queue-now">現正猜測：<strong>A</strong></span>
       </div>
       <div class="queue-line-track">
@@ -1253,15 +1322,6 @@
       <div id="scoreboard" class="scoreboard-grid"></div>
     </section>
 
-    <div class="controls">
-      <div class="route-picker">
-        <label for="routeSelect">本組路線</label>
-        <select id="routeSelect" aria-label="選擇本組已抽籤之路線"></select>
-      </div>
-      <button type="button" id="togglePathBtn" class="btn btn-primary admin-hidden" hidden>顯示／隱藏路線</button>
-      <button type="button" id="resetBtn" class="btn btn-secondary">重新開始</button>
-    </div>
-
     <!-- 管理員專用：連續點擊右下角 5 次以顯示「顯示／隱藏路線」按鈕 -->
     <div id="adminUnlockZone" class="admin-unlock-zone" aria-hidden="true" title=""></div>
 
@@ -1269,15 +1329,15 @@
       <div class="rules-title">遊戲規則</div>
       <ul class="rules-list">
         <li>格子以<strong>欄 A–E</strong>（左至右）、<strong>行 1–7</strong>（底至頂）標示。</li>
-        <li>每組 <strong>11</strong> 位隊員（<strong>A–K</strong>）分兩階段：<strong>A–F 先玩</strong>，<strong>G–K 等候</strong>；待 A–F 全數通關後，G–K 才開始。</li>
+        <li>每組 <strong>10</strong> 位隊員（<strong>A–J</strong>）分兩階段：<strong>A–E 先玩</strong>，<strong>F–J 等候</strong>；待 A–E 全數通關後，F–J 才開始。</li>
         <li>各階段內<strong>單行輪候</strong>，只有最前方者負責猜測。</li>
         <li>隊員必須<strong>直線單行排隊</strong>；未依規定排隊每次加罰 <strong>10 秒</strong>（與其他違規相同）。</li>
         <li>第一步：可選<strong>底行任意一格</strong>（選錯入口也算失敗）。</li>
-        <li>之後：只能選與現位置<strong>上下左右相鄰</strong>的格子。</li>
+        <li>之後：只能選與現位置<strong>上左右相鄰</strong>的格子。</li>
         <li>猜對 <strong>✓</strong>：該隊員繼續猜，進度保留。</li>
         <li>猜錯 <strong>✕</strong> 或<strong>逾時</strong>：顯示 3 秒，進度清零，該隊員排到<strong>隊尾</strong>。</li>
         <li>每步限時：站在任一格後須於 <strong>3 秒</strong>內選下一步；逾時視同猜錯。</li>
-        <li>一人走完全程僅算<strong>個人通關</strong>；須<strong>全組 11 人</strong>皆通關才算完成。</li>
+        <li>一人走完全程僅算<strong>個人通關</strong>；須<strong>全組 10 人</strong>皆通關才算完成。</li>
         <li>
           <strong>禁言與違規：</strong>
           <ul>
@@ -1298,9 +1358,9 @@
         <ol>
           <li>活動主持已在<strong>簡報版</strong>為兩組公開抽籤；請向活動主持確認<strong>本組路線編號</strong>。</li>
           <li>開啟本頁後，於「本組路線」選擇對應編號。</li>
-          <li>向每位隊員派發紙卡，寫上字母 <strong>A</strong> 至 <strong>K</strong>，以標示個人代號。</li>
+          <li>向每位隊員派發紙卡，寫上字母 <strong>A</strong> 至 <strong>J</strong>，以標示個人代號。</li>
           <li>以<strong>單一螢幕</strong>由導師操作；隊員在實體地格上進行，活動期間不宜各自用手機開啟此頁。</li>
-          <li>確認實體地格與螢幕一致：欄 <strong>A–E</strong>（左至右）、行 <strong>1–7</strong>（底至頂）；11 人<strong>單行排隊</strong>。</li>
+          <li>確認實體地格與螢幕一致：欄 <strong>A–E</strong>（左至右）、行 <strong>1–7</strong>（底至頂）；10 人<strong>單行排隊</strong>。</li>
         </ol>
 
         <h3>二、每組開始流程</h3>
@@ -1312,8 +1372,8 @@
 
         <h3>三、進行中操作</h3>
         <ul>
-          <li><strong>兩階段</strong>：A–F 先完成全程；G–K 等候至 A–F 全通關後才開始。</li>
-          <li><strong>單行輪候</strong>：各階段內只有最前方隊員負責猜測；猜對可繼續，猜錯或逾時則排到隊尾；個人走完全程後離隊，下一位從第一行重新出發，直至 11 人皆通關。</li>
+          <li><strong>兩階段</strong>：A–E 先完成全程；F–J 等候至 A–E 全通關後才開始。</li>
+          <li><strong>單行輪候</strong>：各階段內只有最前方隊員負責猜測；猜對可繼續，猜錯或逾時則排到隊尾；個人走完全程後離隊，下一位從第一行重新出發，直至 10 人皆通關。</li>
           <li><strong>每步限時</strong>：站在任一格後須 3 秒內選下一步；逾時視同猜錯。</li>
           <li><strong>計時</strong>：首次點格後開始正計時；全組通關或按「停止計時」記錄總用時。</li>
           <li><strong>違規加罰</strong>：計時旁「＋／−」每次加減 10 秒（發聲、未直線排隊等）；加罰計入總用時。</li>
@@ -1331,7 +1391,7 @@
         </ol>
 
         <p class="guide-note">
-          兩組路線由活動主持在簡報版抽籤分配；10 條路線依格子選錯機率平衡難度，且各僅一個第 7 行出口，確保各組公平。
+          兩組路線由活動主持在簡報版抽籤分配；9 條路線依格子選錯機率平衡難度，且各僅一個第 7 行出口，確保各組公平。
           本頁僅供該組導師依已抽籤結果操作及記錄成績。
         </p>
       </div>
@@ -1374,32 +1434,27 @@
         { col: 1, row: 4 }, { col: 1, row: 3 }, { col: 0, row: 3 }, { col: 0, row: 2 },
         { col: 1, row: 2 }, { col: 1, row: 1 }, { col: 2, row: 1 }, { col: 2, row: 0 },
       ],
-      [ // 5: B1→B2→B3→B4→B5→B6→C6→C5→D5→E5→E6→E7
-        { col: 1, row: 6 }, { col: 1, row: 5 }, { col: 1, row: 4 }, { col: 1, row: 3 },
-        { col: 1, row: 2 }, { col: 1, row: 1 }, { col: 2, row: 1 }, { col: 2, row: 2 },
-        { col: 3, row: 2 }, { col: 4, row: 2 }, { col: 4, row: 1 }, { col: 4, row: 0 },
-      ],
-      [ // 6: D1→D2→D3→D4→C4→C5→B5→A5→A6→B6→C6→C7
+      [ // 5: D1→D2→D3→D4→C4→C5→B5→A5→A6→B6→C6→C7
         { col: 3, row: 6 }, { col: 3, row: 5 }, { col: 3, row: 4 }, { col: 3, row: 3 },
         { col: 2, row: 3 }, { col: 2, row: 2 }, { col: 1, row: 2 }, { col: 0, row: 2 },
         { col: 0, row: 1 }, { col: 1, row: 1 }, { col: 2, row: 1 }, { col: 2, row: 0 },
       ],
-      [ // 7: B1→B2→C2→D2→D3→D4→D5→E5→E6→D6→C6→C7
+      [ // 6: B1→B2→C2→D2→D3→D4→D5→E5→E6→D6→C6→C7
         { col: 1, row: 6 }, { col: 1, row: 5 }, { col: 2, row: 5 }, { col: 3, row: 5 },
         { col: 3, row: 4 }, { col: 3, row: 3 }, { col: 3, row: 2 }, { col: 4, row: 2 },
         { col: 4, row: 1 }, { col: 3, row: 1 }, { col: 2, row: 1 }, { col: 2, row: 0 },
       ],
-      [ // 8: C1→C2→D2→D3→D4→D5→C5→B5→A5→A6→B6→B7
+      [ // 7: C1→C2→D2→D3→D4→D5→C5→B5→A5→A6→B6→B7
         { col: 2, row: 6 }, { col: 2, row: 5 }, { col: 3, row: 5 }, { col: 3, row: 4 },
         { col: 3, row: 3 }, { col: 3, row: 2 }, { col: 2, row: 2 }, { col: 1, row: 2 },
         { col: 0, row: 2 }, { col: 0, row: 1 }, { col: 1, row: 1 }, { col: 1, row: 0 },
       ],
-      [ // 9: C1→C2→C3→B3→A3→A4→B4→B5→B6→C6→D6→D7
+      [ // 8: C1→C2→C3→B3→A3→A4→B4→B5→B6→C6→D6→D7
         { col: 2, row: 6 }, { col: 2, row: 5 }, { col: 2, row: 4 }, { col: 1, row: 4 },
         { col: 0, row: 4 }, { col: 0, row: 3 }, { col: 1, row: 3 }, { col: 1, row: 2 },
         { col: 1, row: 1 }, { col: 2, row: 1 }, { col: 3, row: 1 }, { col: 3, row: 0 },
       ],
-      [ // 10: D1→C1→B1→B2→C2→C3→C4→B4→B5→C5→C6→C7
+      [ // 9: D1→C1→B1→B2→C2→C3→C4→B4→B5→C5→C6→C7
         { col: 3, row: 6 }, { col: 2, row: 6 }, { col: 1, row: 6 }, { col: 1, row: 5 },
         { col: 2, row: 5 }, { col: 2, row: 4 }, { col: 2, row: 3 }, { col: 1, row: 3 },
         { col: 1, row: 2 }, { col: 2, row: 2 }, { col: 2, row: 1 }, { col: 2, row: 0 },
@@ -1412,9 +1467,9 @@
       "#a21caf", "#0e7490", "#c2410c",
     ];
 
-    const ALL_MEMBERS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K"];
-    const PHASE1_MEMBERS = ["A", "B", "C", "D", "E", "F"];
-    const PHASE2_MEMBERS = ["G", "H", "I", "J", "K"];
+    const ALL_MEMBERS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"];
+    const PHASE1_MEMBERS = ["A", "B", "C", "D", "E"];
+    const PHASE2_MEMBERS = ["F", "G", "H", "I", "J"];
 
     /** Grid column letters (A = left) */
     const COL_LABELS = ["A", "B", "C", "D", "E"];
@@ -1852,6 +1907,11 @@
       return new Set(getHiddenPath().map((p) => cellKey(p.col, p.row)));
     }
 
+    function getPathStepNumber(col, row) {
+      const idx = getHiddenPath().findIndex((p) => p.col === col && p.row === row);
+      return idx >= 0 ? idx + 1 : null;
+    }
+
     function cellsAreAdjacent(a, b) {
       return Math.abs(a.col - b.col) + Math.abs(a.row - b.row) === 1;
     }
@@ -1865,7 +1925,7 @@
     }
 
     function currentPhaseLabel() {
-      return phase2Started ? "第二階段 G–K" : "第一階段 A–F";
+      return phase2Started ? "第二階段 F–J" : "第一階段 A–E";
     }
 
     function resetQueueState() {
@@ -1897,7 +1957,7 @@
       const member = currentMember();
       if (!member) {
         if (!phase2Started && isPhase1Complete()) {
-          return "第一階段 A–F 已完成，準備開始第二階段 G–K。";
+          return "第一階段 A–E 已完成，準備開始第二階段 F–J。";
         }
         return "輪候已空。";
       }
@@ -2159,6 +2219,8 @@
             setCellContent(btn, playerMarkerOnGrid(ownerId));
           } else if (pathVisible && onPath) {
             btn.classList.add("path-hint");
+            const stepNum = getPathStepNumber(col, row);
+            setCellContent(btn, stepNum === null ? "" : `<span class="route-step-num">${stepNum}</span>`);
           }
 
           btn.disabled = completed || inputLocked;
@@ -2247,7 +2309,7 @@
           renderBoard();
           renderScoreboard();
           setStatus(
-            `第一階段完成！A–F 皆已通關。第二階段開始 — 隊員 ${currentMember()} 輪到 — 請從底行重新開始。（已通關 ${passedMembers.size}/${ALL_MEMBERS.length}）`
+            `第一階段完成！A–E 皆已通關。第二階段開始 — 隊員 ${currentMember()} 輪到 — 請從底行重新開始。（已通關 ${passedMembers.size}/${ALL_MEMBERS.length}）`
           );
           return;
         }
@@ -2450,8 +2512,8 @@
     }
 
     function validateAllRoutes() {
-      if (ROUTES.length !== 10) {
-        console.warn(`Expected 10 routes, found ${ROUTES.length}.`);
+      if (ROUTES.length !== 9) {
+        console.warn(`Expected 9 routes, found ${ROUTES.length}.`);
       }
       ROUTES.forEach((path, i) => validatePath(path, `Route ${i + 1}`));
     }
