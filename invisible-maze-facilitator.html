@@ -729,6 +729,26 @@
       font-weight: 700;
     }
 
+    .rules-list ul {
+      list-style: none;
+      margin: 0.35rem 0 0;
+      display: grid;
+      gap: 0.28rem;
+    }
+
+    .rules-list ul li {
+      padding-left: 0.95rem;
+      font-size: 0.86rem;
+    }
+
+    .rules-list ul li::before {
+      width: 5px;
+      height: 5px;
+      top: 0.5em;
+      background: var(--brand-blue);
+      opacity: 0.55;
+    }
+
     /* ---------- Facilitator guide ---------- */
     .facilitator-guide {
       background: var(--surface);
@@ -740,15 +760,18 @@
     .facilitator-guide summary {
       list-style: none;
       cursor: pointer;
-      padding: 0.75rem 1rem;
+      padding: 0.75rem 1rem 0.55rem;
       font-size: 0.82rem;
       font-weight: 700;
       color: var(--brand-blue);
       letter-spacing: 0.04em;
       display: flex;
+      flex-direction: column;
       align-items: center;
-      justify-content: space-between;
-      gap: 0.5rem;
+      justify-content: center;
+      gap: 0.28rem;
+      text-align: center;
+      -webkit-tap-highlight-color: transparent;
     }
 
     .facilitator-guide summary::-webkit-details-marker {
@@ -756,14 +779,15 @@
     }
 
     .facilitator-guide summary::after {
-      content: "＋";
-      font-size: 1rem;
+      content: "▼";
+      font-size: 0.72rem;
       color: var(--brand-orange);
       font-weight: 800;
+      line-height: 1;
     }
 
     .facilitator-guide[open] summary::after {
-      content: "－";
+      content: "▲";
     }
 
     .guide-body {
@@ -827,16 +851,17 @@
 
     .scoreboard-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(4.5rem, 1fr));
-      gap: 0.45rem;
+      grid-template-columns: repeat(auto-fill, minmax(5.6rem, 1fr));
+      gap: 0.4rem;
     }
 
     .score-card {
       background: #f3f7fb;
       border-radius: 10px;
-      padding: 0.45rem 0.35rem;
+      padding: 0.4rem 0.28rem;
       border: 1.5px solid transparent;
       min-height: 4.5rem;
+      min-width: 0;
       display: flex;
       flex-direction: column;
     }
@@ -893,10 +918,9 @@
       min-height: 0;
       max-height: 8.5rem;
       overflow-y: auto;
-      overflow-x: hidden;
+      overflow-x: visible;
       overscroll-behavior: contain;
       -webkit-overflow-scrolling: touch;
-      padding-right: 0.1rem;
       scrollbar-width: thin;
       scrollbar-color: #c5d4e3 transparent;
     }
@@ -923,14 +947,15 @@
     }
 
     .attempt-head {
-      font-size: 0.64rem;
+      font-size: 0.6rem;
       font-weight: 800;
       color: var(--brand-blue);
-      letter-spacing: 0.02em;
-      padding: 0.12rem 0.28rem;
+      letter-spacing: 0.01em;
+      padding: 0.1rem 0.15rem;
       border-radius: 6px;
       background: rgba(26, 61, 109, 0.08);
       text-align: center;
+      white-space: nowrap;
     }
 
     .score-card.active .attempt-head {
@@ -942,34 +967,37 @@
       list-style: none;
       display: flex;
       flex-direction: column;
-      gap: 0.18rem;
+      gap: 0.12rem;
     }
 
     .score-hits li {
-      display: grid;
-      grid-template-columns: auto auto 1fr;
+      display: flex;
       align-items: center;
-      gap: 0.2rem;
-      font-size: 0.62rem;
-      line-height: 1.2;
+      justify-content: space-between;
+      gap: 0.12rem;
+      font-size: 0.6rem;
+      line-height: 1.15;
       color: var(--ink);
       font-weight: 600;
-      padding: 0.18rem 0.28rem;
-      border-radius: 6px;
+      padding: 0.12rem 0.14rem;
+      border-radius: 5px;
       background: rgba(255, 255, 255, 0.82);
+      min-width: 0;
     }
 
     .score-hits .guess-num {
       color: var(--muted);
       font-weight: 700;
       white-space: nowrap;
+      flex-shrink: 0;
     }
 
     .score-hits .guess-mark {
-      font-size: 0.72rem;
+      font-size: 0.68rem;
       font-weight: 800;
-      width: 0.85rem;
+      width: 0.7rem;
       text-align: center;
+      flex-shrink: 0;
     }
 
     .score-hits .guess.correct .guess-mark {
@@ -981,9 +1009,13 @@
     }
 
     .score-hits .guess-cell {
+      margin-left: auto;
       text-align: right;
       font-weight: 800;
       color: var(--brand-blue);
+      white-space: nowrap;
+      flex-shrink: 0;
+      letter-spacing: 0;
     }
 
     .score-hits .empty {
@@ -1111,17 +1143,26 @@
         <li>猜對 <strong>✓</strong>：該隊員繼續猜，進度保留。</li>
         <li>猜錯 <strong>✕</strong>：顯示 3 秒，進度清零，該隊員排到<strong>隊尾</strong>。</li>
         <li>一人走完全程僅算<strong>個人通關</strong>；須<strong>全組 11 人</strong>皆通關才算完成。</li>
-        <li>正式時限 <strong>25 分鐘</strong>（首次點格後開始倒數）；時間到即鎖定並響起逾時警報。</li>
+        <li>
+          <strong>禁言與違規：</strong>
+          <ul>
+            <li>全場進入「靜默模式」，嚴禁任何口語發聲，只能使用手勢、眼神或肢體語言溝通。</li>
+            <li>已通關者不得與未通關者有任何溝通。</li>
+            <li>每出現一次發聲違規，裁判將於最終完成時間上<strong>加時 30 秒</strong>。</li>
+          </ul>
+        </li>
+        <li>正式時限 <strong>25 分鐘</strong>（首次點格後開始倒數）；時間到即響起逾時警報。</li>
       </ul>
     </section>
 
     <details class="facilitator-guide">
-      <summary>導師操作指引（點擊展開）</summary>
+      <summary>導師操作指引</summary>
       <div class="guide-body">
         <h3>一、使用前準備</h3>
         <ol>
           <li>活動主持已在<strong>簡報版</strong>為兩組公開抽籤；請向活動主持確認<strong>本組路線編號</strong>。</li>
-          <li>開啟本頁後，於「本組路線」選擇對應編號；或使用網址參數 <code>?team=1&amp;route=7</code>（組別及路線）。</li>
+          <li>開啟本頁後，於「本組路線」選擇對應編號。</li>
+          <li>向每位隊員派發紙卡，寫上字母 <strong>A</strong> 至 <strong>K</strong>，以標示個人代號。</li>
           <li>以<strong>單一螢幕</strong>由導師操作；隊員在實體地格上進行，活動期間不宜各自用手機開啟此頁。</li>
           <li>確認實體地格與螢幕一致：欄 <strong>A–E</strong>（左至右）、行 <strong>1–7</strong>（底至頂）；11 人<strong>單行排隊</strong>。</li>
         </ol>
@@ -1135,9 +1176,9 @@
 
         <h3>三、進行中操作</h3>
         <ul>
-          <li><strong>單行輪候</strong>：只有最前方隊員（A–K）負責猜測；猜對可繼續，猜錯則排到隊尾；個人走完全程後離隊，下一位從底行重走，直至 11 人皆通關。</li>
-          <li><strong>計時</strong>：首次點格後開始 25 分鐘倒數；時間到鎖定猜測並播放逾時警報（約 10 秒）。</li>
-          <li><strong>格子標記</strong>：點選後顯示該隊員顏色小人及代號；正確為綠格，錯誤會<strong>響起警報</strong>並顯示 ✕ 3 秒後全組回到起點；全組通關時播放成功音效。</li>
+          <li><strong>單行輪候</strong>：只有最前方隊員（A–K）負責猜測；猜對可繼續，猜錯則排到隊尾；個人走完全程後離隊，下一位從第一行重新出發，直至 11 人皆通關。</li>
+          <li><strong>計時</strong>：首次點格後倒數 25 分鐘；25 分鐘後會響警報。</li>
+          <li><strong>格子標記</strong>：點選後顯示該隊員顏色小人及代號；正確為綠格，錯誤會響起警報並顯示 ✕ ；通關時播放成功音效。</li>
           <li><strong>成績紀錄</strong>：自動記錄每次<strong>參與</strong>及當中的每次<strong>猜測</strong>（✓／✕ 及格子編號）。</li>
           <li>導師專用：連續點擊頁面<strong>右下角 5 次</strong>，可顯示「顯示／隱藏路線」（建議留待檢討或示範後使用）。</li>
         </ul>
@@ -1737,7 +1778,7 @@
           attemptsHtml = attempts.map((attempt) => {
             const guessesHtml = attempt.guesses.map((g) => `
               <li class="guess ${g.correct ? "correct" : "wrong"}">
-                <span class="guess-num">猜測 ${g.guessNum}</span>
+                <span class="guess-num">${g.guessNum}</span>
                 <span class="guess-mark">${g.correct ? "✓" : "✕"}</span>
                 <span class="guess-cell">${g.label}</span>
               </li>
