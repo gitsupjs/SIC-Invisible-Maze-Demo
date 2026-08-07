@@ -1336,7 +1336,7 @@
         <li>之後：只能選與現位置<strong>上左右相鄰</strong>的格子。</li>
         <li>猜對 <strong>✓</strong>：該隊員繼續猜，進度保留。</li>
         <li>猜錯 <strong>✕</strong> 或<strong>逾時</strong>：顯示 3 秒，進度清零，該隊員排到<strong>隊尾</strong>。</li>
-        <li>每步限時：站在任一格後須於 <strong>3 秒</strong>內選下一步；逾時視同猜錯。</li>
+        <li>每步限時：站在任一格後須於 <strong>5 秒</strong>內選下一步；逾時視同猜錯。</li>
         <li>一人走完全程僅算<strong>個人通關</strong>；須<strong>全組 11 人</strong>皆通關才算完成。</li>
         <li>
           <strong>禁言與違規：</strong>
@@ -1374,7 +1374,7 @@
         <ul>
           <li><strong>兩階段</strong>：A–F 先完成全程；G–K 等候至 A–F 全通關後才開始。</li>
           <li><strong>單行輪候</strong>：各階段內只有最前方隊員負責猜測；猜對可繼續，猜錯或逾時則排到隊尾；個人走完全程後離隊，下一位從第一行重新出發，直至 11 人皆通關。</li>
-          <li><strong>每步限時</strong>：站在任一格後須 3 秒內選下一步；逾時視同猜錯。</li>
+          <li><strong>每步限時</strong>：站在任一格後須 5 秒內選下一步；逾時視同猜錯。</li>
           <li><strong>計時</strong>：首次點格後開始正計時；全組通關或按「停止計時」記錄總用時。</li>
           <li><strong>違規加罰</strong>：計時旁「＋／−」每次加減 10 秒（發聲、未直線排隊等）；加罰計入總用時。</li>
           <li><strong>格子標記</strong>：點選後顯示該隊員顏色小人及代號；正確為綠格，錯誤會響起警報並顯示 ✕ ；通關時播放成功音效。</li>
@@ -1407,7 +1407,7 @@
     const ROWS = 7;
     const PATH_LENGTH = 12;
     const FAIL_DISPLAY_MS = 3000;
-    const STEP_LIMIT_MS = 3000;
+    const STEP_LIMIT_MS = 5000;
     const FAIL_ALARM_PLAY_MS = 2600;
 
     const ROUTES = [
@@ -1965,7 +1965,7 @@
     }
 
     function continuePrompt() {
-      return `猜對 ✓ — 隊員 ${currentMember()} 繼續猜測（3 秒內須選下一步）。`;
+      return `猜對 ✓ — 隊員 ${currentMember()} 繼續猜測（5 秒內須選下一步）。`;
     }
 
     function setTeamMeta(team) {
@@ -2351,7 +2351,7 @@
       playFailAlarm();
       const failMessage =
         options.reason === "timeout"
-          ? `隊員 ${missedMember} 逾時！超過 3 秒未繼續，顯示 ✕ 3 秒…`
+          ? `隊員 ${missedMember} 逾時！超過 5 秒未繼續，顯示 ✕ 3 秒…`
           : `隊員 ${missedMember} 猜錯！警報響起，顯示 ✕ 3 秒…`;
       setStatus(failMessage, "fail");
 
